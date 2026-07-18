@@ -2,42 +2,40 @@
 
 ## Pivot
 
-- [x] Rebrand project as PromptShell.
-- [x] Replace previous project docs with PromptShell docs.
-- [x] Replace file executor with command executor.
-- [x] Remove file management demo actions.
+- [x] Remove web frontend/backend direction.
+- [x] Scaffold Node + Ink CLI app.
+- [x] Rewrite markdown docs for MetroCLI.
 
-## Planner
+## Core CLI
 
-- [x] Add local planner for common developer workflows.
-- [x] Add NVIDIA planner fallback.
-- [x] Validate command plans with Zod.
-- [x] Include command explanations.
-- [x] Include risk levels and warnings.
+- [x] Ink app entrypoint.
+- [x] Header with project and branch.
+- [x] Current working directory display.
+- [x] File-manager panel.
+- [x] Prompt input.
+- [x] Logs panel.
 
-## Executor
+## Planning
 
-- [x] Use `spawn` with `shell: false`.
-- [x] Add executable allowlist.
-- [x] Block destructive commands.
-- [x] Return terminal-style logs.
-- [x] Keep execution inside the project safe root.
-- [x] Return updated working directory after navigation.
+- [x] Local planner for common developer workflows.
+- [x] NVIDIA/OpenAI SDK fallback.
+- [x] Zod validation.
+- [x] Command explanations.
+- [x] Risk levels and warnings.
 
-## UI
+## Safety
 
-- [x] Command prompt input.
-- [x] Suggested developer workflows.
-- [x] Plan preview.
-- [x] Approval before execution.
-- [x] Review prompt before execution.
-- [x] Terminal output log.
-- [x] File manager with current directory.
-- [x] Folder navigation updates prompt context.
+- [x] Review before execution.
+- [x] Block high-risk plans.
+- [x] Allowlist executables.
+- [x] Execute with `execa`.
+- [x] Keep navigation inside project root.
 
 ## Later
 
-- [ ] True streaming output over SSE or WebSocket.
-- [ ] PTY support for interactive commands.
-- [ ] Per-command approval.
-- [ ] Windows command variants.
+- [ ] True streaming command output.
+- [ ] Editable plan steps.
+- [ ] Command history navigation.
+- [ ] PTY support for interactive programs.
+- [ ] Workspace switching.
+- [ ] Theme settings.

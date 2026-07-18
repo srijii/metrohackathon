@@ -1,57 +1,31 @@
-# PromptShell
+# MetroCLI AI
 
-Natural language terminal for common developer workflows.
-
-Type what you want in English, review the generated command plan, then approve execution.
-
-## Examples
-
-```text
-Create a Python virtual environment and install requirements.
-```
-
-```text
-Run postgres in Docker on port 5432.
-```
-
-```text
-Undo my last commit but keep the changes.
-```
+Natural language terminal built with Node.js, TypeScript, React, and Ink.
 
 ## Run
 
-Backend:
-
-```sh
-cd backend
+```bash
+cd metrocli
 pnpm install
-pnpm dev
+pnpm run dev
 ```
 
-Frontend:
+## AI Setup
 
-```sh
-cd frontend
-pnpm install
-pnpm dev
-```
+Create `metrocli/.env`:
 
-## NVIDIA AI
-
-Use a fresh NVIDIA key in `backend/.env`:
-
-```env
-NVIDIA_API_KEY=your_rotated_key_here
+```text
+NVIDIA_API_KEY=your_key_here
 NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1
 NVIDIA_MODEL=z-ai/glm-5.2
 ```
 
-If no key is configured, common workflows still work through the local planner.
+## Demo Prompts
 
-## Safety
-
-- The model only creates a plan.
-- The executor validates every command.
-- Shell mode is disabled.
-- Dangerous commands are blocked.
-- User approval is required before execution.
+```text
+show git status
+cd src
+create a python virtual environment and install requirements
+run postgres in docker on port 5432
+find every pdf modified this week
+```

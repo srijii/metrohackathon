@@ -1,68 +1,42 @@
 # Coding Rules
 
-This project is PromptShell: a natural language terminal for common developer workflows.
-
-## Principles
-
-- The LLM plans; the executor validates and runs.
-- Never execute raw model output.
-- Every command needs an explanation.
-- Every execution needs user approval.
-- Dangerous commands are blocked even if the LLM suggests them.
-
 ## Use
 
-- React functional components.
-- Express with ES Modules.
-- OpenAI SDK pointed at NVIDIA's OpenAI-compatible endpoint.
-- Zod for plan validation.
-- Node `child_process.spawn` with `shell: false`.
-- Allowlisted executables only.
+- Node.js
+- TypeScript
+- React components
+- Ink for terminal UI
+- Functional components only
+- Hooks for local state
+- Zod for validation
+- Execa for command execution
+- OpenAI SDK configured for NVIDIA API
 
-## Backend Shape
+## Never
 
-Keep the backend simple:
+- Hardcode API keys.
+- Execute raw LLM output.
+- Run shell command strings with `shell: true`.
+- Add browser frontend code.
+- Add Express backend code.
+- Build broad autonomous computer control.
+
+## Always
+
+- Keep generated plans structured.
+- Require approval before execution.
+- Explain every command.
+- Keep high-risk actions blocked.
+- Keep files small and readable.
+- Prefer local deterministic planning for common commands.
+- Use AI only as the planner fallback.
+
+## Environment
+
+Use:
 
 ```text
-backend/
-├── server.js
-├── planner.js
-├── executor.js
-└── .env.example
+NVIDIA_API_KEY
+NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1
+NVIDIA_MODEL=z-ai/glm-5.2
 ```
-
-## Supported MVP Commands
-
-- `git status`
-- `git clone <url>`
-- `git reset --soft HEAD~1`
-- `python -m venv .venv`
-- `python -m pip install -r requirements.txt`
-- `python app.py`
-- `npm create vite@latest`
-- `npm install`
-- `npm run dev`
-- `docker run ... postgres`
-- `find ...`
-
-## Block
-
-- `rm`
-- `sudo`
-- `su`
-- `dd`
-- `mkfs`
-- `chmod -R`
-- `chown -R`
-- shell control operators from model output
-- arbitrary scripts from user text
-
-## Frontend
-
-- Show the user request.
-- Show the plan.
-- Show each command.
-- Show why each command was chosen.
-- Show risk and warnings.
-- Ask for approval before execution.
-- Show terminal output.

@@ -3,86 +3,71 @@
 ## Runtime Flow
 
 ```text
-React UI
-  ↓ GET /context?cwd=.
-File manager + current directory
-  ↓ POST /plan
+Ink UI
+  ↓
+Project Analyzer
+  ↓
 Planner
   ↓
-Zod validated command plan
-  ↓ POST /execute
+Review Dialog
+  ↓
 Executor
   ↓
-spawn(command, args, { shell: false })
-  ↓
-Terminal log + updated cwd returned to UI
+Logs + File Manager Refresh
 ```
 
-## Backend
+## Folder Structure
 
 ```text
-backend/
-├── server.js      Express routes and error handling
-├── planner.js     Local planner + NVIDIA fallback + schemas
-├── executor.js    Command allowlist, safety checks, execution
-└── .env.example
+metrocli/
+├── src/
+│   ├── index.tsx
+│   ├── screens/
+│   │   ├── Home.tsx
+│   │   ├── Chat.tsx
+│   │   ├── Plan.tsx
+│   │   ├── Execute.tsx
+│   │   └── Settings.tsx
+│   ├── components/
+│   │   ├── Header.tsx
+│   │   ├── Footer.tsx
+│   │   ├── CommandInput.tsx
+│   │   ├── LogView.tsx
+│   │   ├── Progress.tsx
+│   │   ├── ApprovalDialog.tsx
+│   │   └── FileTree.tsx
+│   ├── services/
+│   │   ├── ai.ts
+│   │   ├── planner.ts
+│   │   ├── executor.ts
+│   │   ├── git.ts
+│   │   └── project.ts
+│   ├── hooks/
+│   │   ├── useKeyboard.ts
+│   │   └── useCommands.ts
+│   ├── utils/
+│   │   ├── colors.ts
+│   │   ├── logger.ts
+│   │   └── icons.ts
+│   └── state/
+│       └── app.ts
+├── package.json
+└── tsconfig.json
 ```
 
-## Frontend
+## Modules
 
-```text
-frontend/src/
-├── App.jsx
-├── App.css
-├── components/
-│   ├── CommandBox.jsx
-│   ├── FileList.jsx
-│   ├── PlanPreview.jsx
-│   ├── ReviewDialog.jsx
-│   └── ProgressLog.jsx
-└── services/
-    └── api.js
-```
-
-`FileList` is the file-manager panel. It renders the current working directory, parent navigation, folders, and files returned by `/context`.
-
-## API
-
-- `GET /health`
-- `GET /context?cwd=frontend`
-- `POST /plan`
-- `POST /execute`
-- `POST /explain`
-
-## Plan Shape
-
-```json
-{
-  "summary": "Set up a Python virtual environment.",
-  "requiresApproval": true,
-  "riskLevel": "medium",
-  "warnings": [],
-  "commands": [
-    {
-      "id": "cmd_1",
-      "title": "Create virtual environment",
-      "command": "python",
-      "args": ["-m", "venv", ".venv"],
-      "cwd": ".",
-      "explanation": "Creates an isolated Python environment.",
-      "risk": "low",
-      "longRunning": false,
-      "interactive": false
-    }
-  ]
-}
-```
+- `Home.tsx`: main TUI controller.
+- `project.ts`: reads current directory, file list, package manager, and Git context.
+- `planner.ts`: local plans plus AI fallback.
+- `ai.ts`: OpenAI SDK client configured for NVIDIA.
+- `executor.ts`: validates and runs approved commands with `execa`.
+- `ApprovalDialog.tsx`: explicit review before execution.
 
 ## Safety Boundary
 
-- Shell is disabled.
-- Commands are spawned directly.
-- Command executable must be allowlisted.
-- Arguments are scanned for destructive patterns.
-- The executor resolves all `cwd` values inside the project safe root.
-- High-risk plans can be previewed but blocked from execution.
+- The planner returns JSON only.
+- Zod validates all plans.
+- The executor only accepts allowlisted executables.
+- High-risk plans cannot execute.
+- Navigation is constrained inside the launched project root.

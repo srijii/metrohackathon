@@ -22,7 +22,7 @@ export function useKeyboard({
   const { exit } = useApp()
 
   useInput((input, key) => {
-    if (input === 'q' || (key.ctrl && input === 'c')) {
+    if ((key.ctrl && input === 'd') || (key.ctrl && input === 'c')) {
       exit()
       return
     }
@@ -47,12 +47,12 @@ export function useKeyboard({
       return
     }
 
-    if (key.ctrl && input === 'p') {
+    if (key.upArrow || (key.ctrl && input === 'p')) {
       onPreviousHistory?.()
       return
     }
 
-    if (key.ctrl && input === 'n') {
+    if (key.downArrow || (key.ctrl && input === 'n')) {
       onNextHistory?.()
     }
   })

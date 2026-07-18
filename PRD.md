@@ -1,10 +1,10 @@
 # Product
 
-MetroCLI AI
+PlanShell AI
 
 ## Pitch
 
-MetroCLI is a natural language terminal. Users describe what they want in English, review the generated command plan, then approve execution inside a terminal UI.
+PlanShell is a natural language terminal. Users describe what they want in English, review the generated command plan, then approve execution inside a terminal UI.
 
 ## Problem
 
@@ -40,13 +40,13 @@ Build a Node.js + Ink command-line app that feels like a compact AI coding termi
 ## User Flow
 
 ```text
-metro
+planshell
   ↓
 Project context loads
   ↓
 User types a request
   ↓
-MetroCLI streams planning status
+PlanShell streams planning status
   ↓
 Inline plan appears in chat
   ↓

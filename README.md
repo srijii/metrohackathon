@@ -1,18 +1,18 @@
-# MetroCLI AI
+# PlanShell AI
 
 Natural language terminal built with Node.js, TypeScript, React, and Ink.
 
 ## Run
 
 ```bash
-cd metrocli
+cd planshell
 pnpm install
 pnpm run dev
 ```
 
 ## AI Setup
 
-Create `metrocli/.env`:
+Create `planshell/.env`:
 
 ```text
 NVIDIA_API_KEY=your_key_here

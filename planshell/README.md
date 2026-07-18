@@ -1,4 +1,4 @@
-# MetroCLI
+# PlanShell
 
 Natural language terminal TUI built with Node.js, TypeScript, React, and Ink.
 

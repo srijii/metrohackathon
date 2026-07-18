@@ -88,15 +88,23 @@ function Plan({ compact = false, plan }: PlanProps) {
         </Box>
       ) : null}
 
-      {plan.commands.slice(0, compact ? 2 : 6).map((command, index) => (
-        <Box key={command.id} flexDirection="column">
-          <Text>
-            │ [ok] {index + 1}. {command.title}
-          </Text>
-          <Text color={colors.primary}>│ $ {truncate(renderCommand(command.command, command.args), 90)}</Text>
-          <Text color={colors.muted}>│ {truncate(command.explanation, 90)}</Text>
-        </Box>
-      ))}
+      {plan.commands.length === 0 ? (
+        <Text color={colors.danger}>│ No commands will run.</Text>
+      ) : null}
+      {plan.commands.slice(0, compact ? 2 : 6).map((command, index, commands) => {
+        const showGroup = command.group && command.group !== commands[index - 1]?.group
+
+        return (
+          <Box key={command.id} flexDirection="column">
+            {showGroup ? <Text color={colors.primary}>│ {command.group}</Text> : null}
+            <Text>
+              │ [ok] {index + 1}. {command.title}
+            </Text>
+            <Text color={colors.primary}>│ $ {truncate(renderCommand(command.command, command.args), 90)}</Text>
+            <Text color={colors.muted}>│ {truncate(command.explanation, 90)}</Text>
+          </Box>
+        )
+      })}
       {compact && plan.commands.length > 2 ? (
         <Text color={colors.muted}>│ ... {plan.commands.length - 2} more commands</Text>
       ) : null}

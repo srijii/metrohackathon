@@ -5,6 +5,7 @@ export type AppScreen = 'home' | 'planning' | 'plan' | 'executing' | 'settings'
 
 export type CommandStep = {
   id: string
+  group?: string
   title: string
   command: string
   args: string[]

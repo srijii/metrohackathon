@@ -13,10 +13,10 @@ function Footer({ compact = false, status, tiny = false }: FooterProps) {
     <Box justifyContent="space-between">
       <Text color={colors.muted}>
         {tiny
-          ? 'Enter | Esc | q'
+          ? 'Enter | Esc | Ctrl+D'
           : compact
-          ? 'Enter approve | Esc cancel | Ctrl+L clear | q quit'
-          : 'Enter: submit/approve | Esc: cancel | Ctrl+L clear | Ctrl+K prompt | Ctrl+P/N history | q quit'}
+          ? 'Enter approve | Esc cancel | Up/Down history | Ctrl+D quit'
+          : 'Enter: submit/approve | Esc: cancel | Up/Down history | Ctrl+L clear | Ctrl+K prompt | Ctrl+D quit'}
       </Text>
       <Text color={colors.primary}>{status}</Text>
     </Box>

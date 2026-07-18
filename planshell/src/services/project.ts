@@ -11,7 +11,26 @@ export function resolveInsideRoot(root: string, cwd: string, target = '.') {
   const rel = relative(root, absolute)
 
   if (rel === '..' || rel.startsWith('../')) {
-    throw new Error('MetroCLI blocked navigation outside the project root.')
+    throw new Error('PlanShell blocked navigation outside the project root.')
+  }
+
+  return absolute
+}
+
+export async function resolveDirectoryInsideRoot(root: string, cwd: string, target = '.') {
+  const absolute = resolveInsideRoot(root, cwd, target)
+
+  try {
+    const info = await stat(absolute)
+    if (!info.isDirectory()) {
+      throw new Error('PlanShell can only navigate into folders.')
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message === 'PlanShell can only navigate into folders.') {
+      throw error
+    }
+
+    throw new Error(`Directory does not exist: ${target}`)
   }
 
   return absolute
@@ -213,7 +232,7 @@ function buildSuggestions(context: {
 export async function analyzeProject(root: string, cwd: string): Promise<ProjectContext> {
   const current = resolveInsideRoot(root, cwd)
   const files = await walkFiles(root)
-  const stack = await detectStack(root)
+  const stack = await detectStack(current)
   const entries = await listEntries(root, current)
   const gitStatus = await getGitStatus(root)
   const modifiedFiles = await countModifiedFiles(root)
@@ -221,9 +240,9 @@ export async function analyzeProject(root: string, cwd: string): Promise<Project
   return {
     cwd: current,
     root,
-    projectName: basename(root),
+    projectName: basename(current),
     branch: await getBranch(root),
-    packageManager: await detectPackageManager(root),
+    packageManager: await detectPackageManager(current),
     nodeDetected: await detectNode(),
     ...stack,
     gitStatus,

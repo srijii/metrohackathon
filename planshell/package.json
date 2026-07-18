@@ -1,11 +1,10 @@
 {
-  "name": "metrocli",
+  "name": "planshell",
   "version": "0.1.0",
   "description": "Natural language terminal built with Node.js, Ink, and AI-generated command plans.",
   "type": "module",
   "bin": {
-    "metro": "./dist/index.js",
-    "metrocli": "./dist/index.js"
+    "planshell": "./dist/index.js"
   },
   "scripts": {
     "dev": "tsx src/index.tsx",

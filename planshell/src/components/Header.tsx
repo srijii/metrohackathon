@@ -13,7 +13,7 @@ function Header({ context }: HeaderProps) {
     <Box flexDirection="column">
       <Box justifyContent="space-between">
         <Text color={colors.primary} bold>
-          MetroCLI AI
+          PlanShell AI
         </Text>
         <Text color={colors.muted}>Node + Ink</Text>
       </Box>

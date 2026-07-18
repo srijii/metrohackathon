@@ -19,7 +19,7 @@ Logs + Project Summary Refresh
 ## Folder Structure
 
 ```text
-metrocli/
+planshell/
 ├── src/
 │   ├── index.tsx
 │   ├── screens/

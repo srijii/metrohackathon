@@ -4,7 +4,7 @@
 
 - [x] Remove web frontend/backend direction.
 - [x] Scaffold Node + Ink CLI app.
-- [x] Rewrite markdown docs for MetroCLI.
+- [x] Rewrite markdown docs for PlanShell.
 
 ## Core CLI
 

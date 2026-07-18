@@ -2,13 +2,14 @@ import { relative } from 'node:path'
 import { execa } from 'execa'
 import type { CommandPlan, ExecutionResult } from '../state/app.js'
 import { allowedCommands, planSchema } from './planner.js'
-import { resolveInsideRoot } from './project.js'
+import { resolveDirectoryInsideRoot, resolveInsideRoot } from './project.js'
 import { renderCommand } from '../utils/logger.js'
 import { cleanText } from '../utils/text.js'
 
-const blockedArgs = ['rm', 'sudo', 'su', 'mkfs', 'dd', 'chmod -R', 'chown -R', '&&', ';', '|', '>', '<', '$(', '`']
+const blockedArgs = ['sudo', 'su', 'mkfs', 'dd', 'chmod -R', 'chown -R', '&&', ';', '|', '>', '<', '$(', '`']
+const pathCommands = new Set(['touch', 'mkdir', 'rmdir', 'mv', 'cp', 'cat'])
 
-function validate(command: CommandPlan['commands'][number]) {
+function validate(command: CommandPlan['commands'][number], root: string) {
   if (!allowedCommands.includes(command.command as (typeof allowedCommands)[number])) {
     throw new Error(`Blocked executable: ${command.command}`)
   }
@@ -17,6 +18,13 @@ function validate(command: CommandPlan['commands'][number]) {
   for (const blocked of blockedArgs) {
     if (rendered.includes(blocked.toLowerCase())) {
       throw new Error(`Blocked unsafe command content: ${blocked}`)
+    }
+  }
+
+  if (pathCommands.has(command.command)) {
+    for (const arg of command.args) {
+      if (!arg || arg.startsWith('-')) continue
+      resolveInsideRoot(root, command.cwd, arg)
     }
   }
 }
@@ -32,13 +40,13 @@ export async function executePlan(root: string, plan: CommandPlan): Promise<{ cw
   const logs = ['Approval received.', 'Validating command plan.']
   const results: ExecutionResult[] = []
 
-  for (const command of parsed.commands) {
-    validate(command)
-    logs.push(`Plan step: ${command.title}`)
+  for (const [index, command] of parsed.commands.entries()) {
+    validate(command, root)
+    logs.push(`Step ${index + 1}/${parsed.commands.length}: ${command.title}`)
     logs.push(`Reason: ${command.explanation}`)
 
     if (command.command === 'cd') {
-      cwd = resolveInsideRoot(root, command.cwd, command.args[0] || '.')
+      cwd = await resolveDirectoryInsideRoot(root, command.cwd, command.args[0] || '.')
       const relativeCwd = relative(root, cwd) || '.'
       const result = {
         id: command.id,

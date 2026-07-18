@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import React, { useEffect, useMemo, useState } from 'react'
 import { Box, Text, useStdout } from 'ink'
 import ChatTranscript from '../components/ChatTranscript.js'
@@ -12,11 +14,23 @@ import { useCommands } from '../hooks/useCommands.js'
 import { useKeyboard } from '../hooks/useKeyboard.js'
 import { executePlan } from '../services/executor.js'
 import { analyzeProject } from '../services/project.js'
-import type { AppScreen, ChatMessage, ProjectContext } from '../state/app.js'
+import type { AppScreen, ChatMessage, CommandPlan, ProjectContext } from '../state/app.js'
 import { colors } from '../utils/colors.js'
 import { truncate } from '../utils/text.js'
 
 const STARTER_PROMPT = ''
+
+function detectWorkspaceRoot(start: string) {
+  let current = start
+
+  while (true) {
+    if (existsSync(join(current, '.git'))) return current
+
+    const parent = dirname(current)
+    if (parent === current) return start
+    current = parent
+  }
+}
 
 function relativeLabel(root: string, cwd: string) {
   return cwd === root ? '.' : cwd.replace(`${root}/`, '')
@@ -26,14 +40,46 @@ function readableError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error)
 
   if (message.trim().startsWith('[') || message.includes('Invalid input')) {
-    return 'Planner returned an invalid response. MetroCLI kept execution blocked.'
+    return 'Planner returned an invalid response. PlanShell kept execution blocked.'
   }
 
   return truncate(message, 96)
 }
 
+function lastCreatedFolder(previousPlan: CommandPlan | null) {
+  const command = previousPlan?.commands.find((item) => item.command === 'mkdir')
+  const target = command?.args.find((arg) => !arg.startsWith('-'))?.replace(/\/$/g, '')
+  return target || ''
+}
+
+function resolveCorrectionPrompt(input: string, previousPlan: CommandPlan | null) {
+  const text = input.toLowerCase()
+  const correctsFolderToFile = /\b(not|no|instead|mean|meant)\b/.test(text) &&
+    /\b(directory|folder)\b/.test(text) &&
+    /\bfile\b/.test(text)
+
+  if (!correctsFolderToFile) {
+    return { prompt: input, note: '' }
+  }
+
+  const folder = lastCreatedFolder(previousPlan)
+  if (!folder) {
+    return { prompt: input, note: '' }
+  }
+
+  return {
+    prompt: `replace folder ${folder} with file ${folder}`,
+    note: `Using previous target: ${folder}; replacing the folder with a file.`,
+  }
+}
+
+function isInvalidTerminalPlan(nextPlan: CommandPlan) {
+  return nextPlan.summary === 'Invalid terminal request'
+}
+
 function Home() {
-  const root = useMemo(() => process.cwd(), [])
+  const launchCwd = useMemo(() => process.cwd(), [])
+  const root = useMemo(() => detectWorkspaceRoot(launchCwd), [launchCwd])
   const { stdout } = useStdout()
   const terminalColumns = stdout.columns || 100
   const terminalRows = stdout.rows || 32
@@ -44,7 +90,7 @@ function Home() {
   const showHeader = terminalRows >= 10
   const showSidebar = !isNarrow && !isShort
   const showLogs = terminalRows >= 22
-  const [cwd, setCwd] = useState(root)
+  const [cwd, setCwd] = useState(launchCwd)
   const [context, setContext] = useState<ProjectContext | null>(null)
   const [input, setInput] = useState(STARTER_PROMPT)
   const [logs, setLogs] = useState<string[]>([])
@@ -54,6 +100,7 @@ function Home() {
   const [isPlanning, setIsPlanning] = useState(false)
   const [isExecuting, setIsExecuting] = useState(false)
   const [historyIndex, setHistoryIndex] = useState(-1)
+  const [lastPlan, setLastPlan] = useState<CommandPlan | null>(null)
   const { history, plan, planCommand, setPlan } = useCommands()
   const showPlanner = Boolean(plan) && terminalRows >= 14
 
@@ -79,6 +126,7 @@ function Home() {
     setMessages([])
     setLogs([])
     setPlan(null)
+    setLastPlan(null)
     setError('')
     setScreen('home')
   }
@@ -86,7 +134,7 @@ function Home() {
   function showHelp() {
     appendMessage('system', [
       'Slash commands: /help, /history, /model, /reset, /files, /context, /approve, /clear',
-      'Shortcuts: Enter submit/approve, Esc cancel, Ctrl+L clear logs, Ctrl+K clear prompt, Ctrl+P/Ctrl+N history.',
+      'Shortcuts: Enter submit/approve, Esc cancel, Up/Down history, Ctrl+L clear logs, Ctrl+K clear prompt.',
     ])
   }
 
@@ -94,7 +142,7 @@ function Home() {
     if (!context) return
 
     appendMessage('system', [
-      'MetroCLI understands:',
+      'PlanShell understands:',
       `[ok] ${context.framework} frontend`,
       `[ok] ${context.backend} backend`,
       `[ok] ${context.database} database`,
@@ -175,37 +223,72 @@ function Home() {
     setLogs([])
     setInput('')
     appendMessage('user', [value])
-    appendMessage('assistant', ['Thinking...', 'Analyzing repository...'])
 
     try {
       const nextContext = await refresh(cwd)
-      let tokenCount = 0
-      const nextPlan = await planCommand(value, nextContext, {
+      const resolved = resolveCorrectionPrompt(value, lastPlan)
+      const nextPlan = await planCommand(resolved.prompt, nextContext, {
         onStatus(line) {
-          setLogs((items) => [...items, line])
+          setLogs((items) => [...items.slice(-10), line])
         },
-        onToken(token) {
-          tokenCount += token.length
-          if (tokenCount > 0 && tokenCount % 160 < token.length) {
-            setLogs((items) => [...items.slice(-14), `Streaming NVIDIA response... ${tokenCount} chars`])
-          }
+        onToken() {
+          setLogs((items) => items.includes('Receiving planner response...')
+            ? items
+            : [...items.slice(-10), 'Receiving planner response...'])
         },
       })
-      setScreen('plan')
+      setLastPlan(nextPlan)
+
       appendMessage('assistant', [
-        `I'll ${nextPlan.summary.toLowerCase()}:`,
-        ...nextPlan.commands.map((command) => `[ok] ${command.title}`),
-        `Confidence: ${nextPlan.confidence.score}%`,
-        nextPlan.riskLevel === 'high'
-          ? 'This is high risk, so execution is blocked.'
-          : 'Press Enter to approve, or Esc to cancel.',
-      ])
-      setLogs((items) => [...items, 'Waiting for approval.'])
+        resolved.note,
+        isInvalidTerminalPlan(nextPlan) ? nextPlan.summary : `Plan: ${nextPlan.summary}`,
+        isInvalidTerminalPlan(nextPlan) ? nextPlan.rejection?.reason || '' : `Risk: ${riskLabel(nextPlan.riskLevel)} | Confidence: ${nextPlan.confidence.score}%`,
+        ...nextPlan.commands.slice(0, 4).map((command) => `$ ${command.command} ${command.args.join(' ')}`.trim()),
+        nextPlan.commands.length === 0 ? 'No commands will run.' : '',
+      ].filter(Boolean))
+
+      if (isInvalidTerminalPlan(nextPlan)) {
+        setPlan(null)
+        setScreen('home')
+        setLogs(['Invalid input. Terminal has nothing to do.'])
+        return
+      }
+
+      if (nextPlan.riskLevel === 'high') {
+        setScreen('plan')
+        setLogs(['Review required. Nothing has been executed.'])
+        return
+      }
+
+      await runPlan(nextPlan)
     } catch (err) {
       setError(readableError(err))
       setScreen('home')
     } finally {
       setIsPlanning(false)
+    }
+  }
+
+  async function runPlan(nextPlan: NonNullable<typeof plan>) {
+    setError('')
+    setPlan(null)
+    setIsExecuting(true)
+    setScreen('executing')
+
+    try {
+      const result = await executePlan(root, nextPlan)
+      setLogs(result.logs)
+      await refresh(result.cwd)
+      appendMessage('assistant', result.results.every((item) => item.exitCode === 0)
+        ? ['Done.']
+        : ['Stopped because one command failed.'])
+      setPlan(null)
+      setScreen('home')
+    } catch (err) {
+      setError(readableError(err))
+      setScreen('home')
+    } finally {
+      setIsExecuting(false)
     }
   }
 
@@ -219,25 +302,7 @@ function Home() {
       return
     }
 
-    setError('')
-    setIsExecuting(true)
-    setScreen('executing')
-
-    try {
-      const result = await executePlan(root, plan)
-      setLogs(result.logs)
-      await refresh(result.cwd)
-      appendMessage('assistant', result.results.every((item) => item.exitCode === 0)
-        ? ['Execution finished successfully.']
-        : ['Execution stopped because one command failed.'])
-      setPlan(null)
-      setScreen('home')
-    } catch (err) {
-      setError(readableError(err))
-      setScreen('plan')
-    } finally {
-      setIsExecuting(false)
-    }
+    await runPlan(plan)
   }
 
   function handleCancel() {
@@ -298,7 +363,7 @@ function Home() {
 
       {isMicro ? (
         <Box flexDirection="column" flexGrow={1}>
-          <Text color={colors.primary}>MetroCLI ready</Text>
+          <Text color={colors.primary}>PlanShell ready</Text>
           <Text color={colors.muted}>{context ? `${context.projectName} | ${context.branch}` : 'Analyzing project...'}</Text>
           <Text color={colors.muted}>{plan ? `${riskLabel(plan.riskLevel)} | ${plan.confidence.score}% | Enter approves` : status}</Text>
         </Box>
@@ -310,7 +375,7 @@ function Home() {
           cwd={relativeLabel(root, cwd)}
           disabled={isPlanning || isExecuting || Boolean(plan)}
           input={input}
-          statusLabel={isPlanning ? 'Planning...' : isExecuting ? 'Executing...' : 'Review pending...'}
+          statusLabel={isPlanning ? 'Planning...' : isExecuting ? 'Executing...' : plan ? 'Review pending...' : 'Ready'}
           onChange={setInput}
           onSubmit={handleSubmit}
         />

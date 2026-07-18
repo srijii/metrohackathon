@@ -1,6 +1,6 @@
 # Internal Interfaces
 
-MetroCLI is a local TUI, so there are no HTTP routes.
+PlanShell is a local TUI, so there are no HTTP routes.
 
 ## Planner Input
 

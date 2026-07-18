@@ -16,6 +16,24 @@ createPlan(input: string, context: ProjectContext): Promise<CommandPlan>
   "requiresApproval": true,
   "riskLevel": "low",
   "warnings": [],
+  "simulation": {
+    "filesCreated": [],
+    "filesModified": [],
+    "filesDeleted": [],
+    "networkRequired": false,
+    "estimatedSeconds": 3
+  },
+  "diffPreview": [],
+  "confidence": {
+    "score": 97,
+    "reasons": ["Repository analyzed", "Deterministic workflow matched"]
+  },
+  "rollback": {
+    "available": true,
+    "command": "No file rollback needed",
+    "explanation": "Read-only command."
+  },
+  "rejection": null,
   "commands": [
     {
       "id": "cmd_1",

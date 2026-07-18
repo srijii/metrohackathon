@@ -20,7 +20,43 @@ export type CommandPlan = {
   requiresApproval: true
   riskLevel: RiskLevel
   warnings: string[]
+  simulation: PlanSimulation
+  diffPreview: DiffPreview[]
+  confidence: PlanConfidence
+  rollback: RollbackPlan | null
+  rejection: RejectionDetails | null
   commands: CommandStep[]
+}
+
+export type PlanSimulation = {
+  filesCreated: string[]
+  filesModified: string[]
+  filesDeleted: string[]
+  networkRequired: boolean
+  estimatedSeconds: number
+}
+
+export type DiffPreview = {
+  path: string
+  kind: 'create' | 'modify' | 'delete'
+  lines: string[]
+}
+
+export type PlanConfidence = {
+  score: number
+  reasons: string[]
+}
+
+export type RollbackPlan = {
+  available: boolean
+  command: string
+  explanation: string
+}
+
+export type RejectionDetails = {
+  reason: string
+  policy: string
+  alternative: string
 }
 
 export type ExecutionResult = {
@@ -38,6 +74,20 @@ export type ProjectContext = {
   branch: string
   packageManager: string
   nodeDetected: boolean
+  framework: string
+  backend: string
+  database: string
+  testing: string
+  styling: string
+  router: string
+  linting: string
+  ci: boolean
+  docker: boolean
+  gitStatus: string
+  modifiedFiles: number
+  fileCount: number
+  recentFiles: FileEntry[]
+  suggestions: string[]
   entries: FileEntry[]
 }
 
@@ -50,4 +100,10 @@ export type FileEntry = {
 
 export type ScreenProps = {
   children?: React.ReactNode
+}
+
+export type ChatMessage = {
+  id: string
+  role: 'user' | 'assistant' | 'system'
+  lines: string[]
 }

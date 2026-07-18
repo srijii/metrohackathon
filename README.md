@@ -25,6 +25,9 @@ NVIDIA_MODEL=z-ai/glm-5.2
 ```text
 show git status
 cd src
+/help
+/context
+/history
 create a python virtual environment and install requirements
 run postgres in docker on port 5432
 find every pdf modified this week

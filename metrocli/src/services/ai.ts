@@ -9,7 +9,11 @@ export function createAiClient() {
   })
 }
 
-export async function completeWithAi(system: string, user: string) {
+export async function completeWithAi(
+  system: string,
+  user: string,
+  onToken?: (token: string) => void,
+) {
   const client = createAiClient()
   if (!client) return ''
 
@@ -19,16 +23,18 @@ export async function completeWithAi(system: string, user: string) {
       { role: 'system', content: system },
       { role: 'user', content: user },
     ],
-    temperature: 0.2,
+    temperature: 1,
     top_p: 1,
-    max_tokens: 1800,
+    max_tokens: 16384,
     seed: 42,
     stream: true,
   })
 
   let text = ''
   for await (const chunk of completion) {
-    text += chunk.choices[0]?.delta?.content || ''
+    const token = chunk.choices[0]?.delta?.content || ''
+    text += token
+    if (token) onToken?.(token)
   }
 
   return text

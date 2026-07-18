@@ -15,10 +15,13 @@ Developers and students know outcomes like "create a Python environment" or "che
 Build a Node.js + Ink command-line app that feels like a compact AI coding terminal:
 
 - Shows current project, Git branch, and working directory.
-- Shows a file-manager panel for the current directory.
+- Shows a project summary panel with detected stack, file count, and recent files.
 - Accepts plain-English prompts.
 - Generates an explainable command plan.
-- Requires review before execution.
+- Renders the plan inline in the conversation.
+- Uses Enter to approve and Esc to cancel.
+- Shows a simulation of files created, modified, deleted, network use, time, rollback, and confidence.
+- Shows diff preview for planned project changes.
 - Blocks dangerous plans.
 - Executes safe commands and shows logs.
 
@@ -43,9 +46,11 @@ Project context loads
   ↓
 User types a request
   ↓
-MetroCLI plans commands
+MetroCLI streams planning status
   ↓
-User reviews and approves
+Inline plan appears in chat
+  ↓
+User approves with Enter
   ↓
 Executor runs safe commands
   ↓
@@ -60,6 +65,8 @@ Logs and current directory update
 - High-risk plans are preview-only.
 - Every plan requires approval.
 - Execution runs through `execa`, not a raw shell string.
+- Slash commands provide help, history, model, context, files, reset, clear, and approve.
+- Rejected requests explain why they were blocked and suggest safer alternatives.
 
 ## Non-Goals
 
@@ -84,5 +91,5 @@ Logs and current directory update
 - 20 min: project scaffold.
 - 35 min: planner and safety model.
 - 35 min: Ink UI.
-- 20 min: executor and file manager.
+- 20 min: executor and project summary.
 - 10 min: polish and demo script.

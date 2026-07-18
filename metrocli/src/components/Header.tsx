@@ -2,6 +2,7 @@ import React from 'react'
 import { Box, Text } from 'ink'
 import type { ProjectContext } from '../state/app.js'
 import { colors } from '../utils/colors.js'
+import { truncate } from '../utils/text.js'
 
 type HeaderProps = {
   context: ProjectContext | null
@@ -18,10 +19,10 @@ function Header({ context }: HeaderProps) {
       </Box>
       <Box marginTop={1} justifyContent="space-between">
         <Text>
-          Current Project: <Text bold>{context?.projectName || 'loading'}</Text>
+          Project: <Text bold>{truncate(context?.projectName || 'loading', 24)}</Text>
         </Text>
         <Text>
-          Branch: <Text color={colors.success}>{context?.branch || 'checking'}</Text>
+          Branch: <Text color={colors.success}>{truncate(context?.branch || 'checking', 24)}</Text>
         </Text>
       </Box>
     </Box>

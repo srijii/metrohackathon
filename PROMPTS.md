@@ -14,6 +14,24 @@ Every response must match:
   "requiresApproval": true,
   "riskLevel": "low | medium | high",
   "warnings": [],
+  "simulation": {
+    "filesCreated": [],
+    "filesModified": [],
+    "filesDeleted": [],
+    "networkRequired": false,
+    "estimatedSeconds": 8
+  },
+  "diffPreview": [],
+  "confidence": {
+    "score": 90,
+    "reasons": ["Repository analyzed", "Command allowlist checked"]
+  },
+  "rollback": {
+    "available": true,
+    "command": "git checkout -- file",
+    "explanation": "How to undo the operation"
+  },
+  "rejection": null,
   "commands": []
 }
 ```

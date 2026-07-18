@@ -9,11 +9,11 @@ Project Analyzer
   ↓
 Planner
   ↓
-Review Dialog
+Inline Plan
   ↓
 Executor
   ↓
-Logs + File Manager Refresh
+Logs + Project Summary Refresh
 ```
 
 ## Folder Structure
@@ -29,13 +29,13 @@ metrocli/
 │   │   ├── Execute.tsx
 │   │   └── Settings.tsx
 │   ├── components/
+│   │   ├── ChatTranscript.tsx
 │   │   ├── Header.tsx
 │   │   ├── Footer.tsx
 │   │   ├── CommandInput.tsx
 │   │   ├── LogView.tsx
 │   │   ├── Progress.tsx
-│   │   ├── ApprovalDialog.tsx
-│   │   └── FileTree.tsx
+│   │   └── ProjectSummary.tsx
 │   ├── services/
 │   │   ├── ai.ts
 │   │   ├── planner.ts
@@ -62,7 +62,8 @@ metrocli/
 - `planner.ts`: local plans plus AI fallback.
 - `ai.ts`: OpenAI SDK client configured for NVIDIA.
 - `executor.ts`: validates and runs approved commands with `execa`.
-- `ApprovalDialog.tsx`: explicit review before execution.
+- `Plan.tsx`: inline review before execution.
+- `ProjectSummary.tsx`: stack detection, branch, current directory, and recent files.
 
 ## Safety Boundary
 

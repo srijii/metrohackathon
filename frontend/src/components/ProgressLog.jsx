@@ -5,7 +5,7 @@ function ProgressLog({ logs, isExecuting }) {
     <section className="panel">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">Progress</p>
+          <p className="eyebrow">Terminal</p>
           <h2>Execution log</h2>
         </div>
         <Terminal size={20} />
@@ -14,10 +14,10 @@ function ProgressLog({ logs, isExecuting }) {
       <div className="log-box">
         {logs.length === 0 ? (
           <p className="muted">
-            {isExecuting ? 'Starting...' : 'Run a plan to see file changes.'}
+            {isExecuting ? 'Starting...' : 'Run a plan to see terminal output.'}
           </p>
         ) : (
-          logs.map((log, index) => <p key={`${log}-${index}`}>✓ {log}</p>)
+          logs.map((log, index) => <p key={`${log}-${index}`}>{log}</p>)
         )}
       </div>
     </section>

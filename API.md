@@ -12,24 +12,37 @@ http://localhost:3000
 GET /health
 ```
 
-Returns:
+## Context
+
+```http
+GET /context?cwd=frontend
+```
+
+Returns OS, platform, current working directory, safe root, allowed commands, and the files/folders in that directory.
+
+Response shape:
 
 ```json
 {
   "data": {
-    "ok": true,
-    "service": "file-automation"
+    "context": {
+      "cwd": "frontend",
+      "cwdName": "frontend",
+      "absoluteCwd": "/path/to/project/frontend",
+      "entries": [
+        {
+          "name": "package.json",
+          "path": "frontend/package.json",
+          "type": "file",
+          "extension": ".json",
+          "size": 1200,
+          "updatedAt": "2026-07-19T10:00:00.000Z"
+        }
+      ]
+    }
   }
 }
 ```
-
-## Files
-
-```http
-GET /files
-```
-
-Returns the current contents of `backend/demo/`.
 
 ## Plan
 
@@ -41,7 +54,8 @@ Body:
 
 ```json
 {
-  "command": "My Downloads folder is a disaster."
+  "command": "Create a Python virtual environment and install requirements.",
+  "cwd": "backend"
 }
 ```
 
@@ -51,13 +65,21 @@ Returns:
 {
   "data": {
     "plan": {
-      "summary": "Clean up the demo folder.",
+      "summary": "Create an isolated Python environment and install dependencies.",
       "requiresApproval": true,
-      "actions": [
+      "riskLevel": "medium",
+      "warnings": [],
+      "commands": [
         {
-          "action": "rename_pdfs",
-          "folder": "demo",
-          "exclude": []
+          "id": "cmd_1",
+          "title": "Create virtual environment",
+          "command": "python",
+          "args": ["-m", "venv", ".venv"],
+          "cwd": ".",
+          "explanation": "Creates an isolated environment to prevent dependency conflicts.",
+          "risk": "low",
+          "longRunning": false,
+          "interactive": false
         }
       ]
     }
@@ -76,52 +98,40 @@ Body:
 ```json
 {
   "plan": {
-    "summary": "Clean up the demo folder.",
+    "summary": "Check repository status.",
     "requiresApproval": true,
-    "actions": [
+    "riskLevel": "low",
+    "warnings": [],
+    "commands": [
       {
-        "action": "rename_pdfs",
-        "folder": "demo",
-        "exclude": []
+        "id": "cmd_1",
+        "title": "Show Git status",
+        "command": "git",
+        "args": ["status", "--short"],
+        "cwd": ".",
+        "explanation": "Shows changed files without modifying anything.",
+        "risk": "low",
+        "longRunning": false,
+        "interactive": false
       }
     ]
   }
 }
 ```
 
-Returns:
+Returns terminal logs and the final working directory.
 
-```json
-{
-  "data": {
-    "logs": ["Reading PDFs...", "Renamed invoice.pdf -> Amazon Invoice.pdf"],
-    "files": []
-  }
-}
-```
-
-## Undo
+## Explain
 
 ```http
-POST /undo
+POST /explain
 ```
 
-Restores the last execution recorded in `backend/undo.json`.
-
-Returns:
+Body:
 
 ```json
 {
-  "data": {
-    "logs": ["Undoing last operation...", "Undo complete."],
-    "files": [],
-    "canUndo": false
-  }
+  "command": "python",
+  "args": ["-m", "venv", ".venv"]
 }
 ```
-
-## Supported Actions
-
-- `rename_pdfs`
-- `organize_downloads`
-- `png_to_webp`

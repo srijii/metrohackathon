@@ -1,13 +1,22 @@
-# Natural Language File Automation
+# PromptShell
 
-Hackathon demo: type a plain-English command, convert it into a safe JSON plan, then execute one of four fixed file automation actions inside `backend/demo/`.
+Natural language terminal for common developer workflows.
 
-## Supported Actions
+Type what you want in English, review the generated command plan, then approve execution.
 
-- Rename PDFs
-- Organize downloads
-- Convert PNG to WebP
-- Undo last operation
+## Examples
+
+```text
+Create a Python virtual environment and install requirements.
+```
+
+```text
+Run postgres in Docker on port 5432.
+```
+
+```text
+Undo my last commit but keep the changes.
+```
 
 ## Run
 
@@ -27,30 +36,22 @@ pnpm install
 pnpm dev
 ```
 
-Open:
+## NVIDIA AI
 
-```text
-http://localhost:5173
-```
+Use a fresh NVIDIA key in `backend/.env`:
 
-## Environment
-
-Backend:
-
-```text
-PORT=3000
-CLIENT_ORIGIN=http://localhost:5173
-NVIDIA_API_KEY=
+```env
+NVIDIA_API_KEY=your_rotated_key_here
 NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1
 NVIDIA_MODEL=z-ai/glm-5.2
 ```
 
-If `NVIDIA_API_KEY` is missing, the app uses a deterministic fallback planner.
+If no key is configured, common workflows still work through the local planner.
 
 ## Safety
 
-- The LLM only produces JSON.
-- The executor only supports three actions.
-- File changes are limited to `backend/demo/`.
-- No arbitrary shell commands are generated or executed.
-- Undo is recorded in `backend/undo.json`.
+- The model only creates a plan.
+- The executor validates every command.
+- Shell mode is disabled.
+- Dangerous commands are blocked.
+- User approval is required before execution.

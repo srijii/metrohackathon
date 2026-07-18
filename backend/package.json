@@ -1,7 +1,7 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "Natural language file automation backend",
+  "description": "PromptShell natural language terminal backend",
   "main": "server.js",
   "scripts": {
     "dev": "node --watch server.js",

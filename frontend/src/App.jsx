@@ -1,51 +1,65 @@
 import { useEffect, useState } from 'react'
-import {
-  createPlan,
-  executePlan,
-  getFiles,
-  undoLastOperation,
-} from './services/api.js'
+import toast, { Toaster } from 'react-hot-toast'
+import { createPlan, executePlan, getContext } from './services/api.js'
 import CommandBox from './components/CommandBox.jsx'
 import FileList from './components/FileList.jsx'
 import PlanPreview from './components/PlanPreview.jsx'
 import ProgressLog from './components/ProgressLog.jsx'
+import ReviewDialog from './components/ReviewDialog.jsx'
 import './App.css'
 
-const STARTER_COMMAND = 'My Downloads folder is a disaster.'
+const STARTER_COMMAND = 'Create a Python virtual environment and install requirements.'
+
+function parentPath(path) {
+  if (!path || path === '.') return '.'
+  const parts = path.split('/').filter(Boolean)
+  parts.pop()
+  return parts.length > 0 ? parts.join('/') : '.'
+}
 
 function App() {
   const [command, setCommand] = useState(STARTER_COMMAND)
   const [plan, setPlan] = useState(null)
-  const [files, setFiles] = useState([])
+  const [context, setContext] = useState(null)
+  const [cwd, setCwd] = useState('.')
   const [logs, setLogs] = useState([])
   const [error, setError] = useState('')
   const [isPlanning, setIsPlanning] = useState(false)
   const [isExecuting, setIsExecuting] = useState(false)
-  const [isUndoing, setIsUndoing] = useState(false)
-  const [canUndo, setCanUndo] = useState(false)
+  const [isReviewOpen, setIsReviewOpen] = useState(false)
 
-  async function refreshFiles() {
-    const data = await getFiles()
-    setFiles(data.files)
+  async function refreshContext(nextCwd = cwd) {
+    const data = await getContext(nextCwd)
+    setContext(data.context)
+    setCwd(data.context.cwd)
   }
 
   useEffect(() => {
-    refreshFiles().catch((err) => setError(err.message))
+    refreshContext().catch((err) => setError(err.message))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function handlePlan(nextCommand = command) {
     setError('')
-    setLogs([])
+    setLogs(['Understanding request...', 'Generating execution plan...'])
     setIsPlanning(true)
 
     try {
-      const data = await createPlan(nextCommand)
+      const data = await createPlan(nextCommand, cwd)
       setPlan(data.plan)
+      setLogs(['Understanding request...', 'Plan generated. Review before executing.'])
     } catch (err) {
       setError(err.message)
+      toast.error(err.message)
+      setLogs([])
     } finally {
       setIsPlanning(false)
     }
+  }
+
+  function handleRequestExecute() {
+    if (!plan) return
+    setIsReviewOpen(true)
   }
 
   async function handleExecute() {
@@ -53,34 +67,23 @@ function App() {
 
     setError('')
     setIsExecuting(true)
-    setLogs(['Executor approved. Starting safe demo actions...'])
+    setLogs(['Proceed approved.', 'Validating command plan...'])
 
     try {
       const data = await executePlan(plan)
       setLogs(data.logs)
-      setFiles(data.files)
-      setCanUndo(data.canUndo)
+      setIsReviewOpen(false)
+      if (data.cwd) {
+        await refreshContext(data.cwd)
+      } else {
+        await refreshContext(cwd)
+      }
+      toast.success(data.success ? 'Plan executed.' : 'Plan stopped.')
     } catch (err) {
       setError(err.message)
+      toast.error(err.message)
     } finally {
       setIsExecuting(false)
-    }
-  }
-
-  async function handleUndo() {
-    setError('')
-    setIsUndoing(true)
-    setLogs(['Undo requested. Restoring previous file state...'])
-
-    try {
-      const data = await undoLastOperation()
-      setLogs(data.logs)
-      setFiles(data.files)
-      setCanUndo(data.canUndo)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setIsUndoing(false)
     }
   }
 
@@ -89,20 +92,39 @@ function App() {
     handlePlan(nextCommand)
   }
 
+  async function handleOpenFolder(path) {
+    setError('')
+    try {
+      await refreshContext(path)
+      setPlan(null)
+      setLogs([`Changed directory to ${path}`])
+    } catch (err) {
+      setError(err.message)
+      toast.error(err.message)
+    }
+  }
+
+  function handleGoUp() {
+    handleOpenFolder(parentPath(cwd))
+  }
+
   return (
     <main className="app-shell">
+      <Toaster position="top-right" />
       <section className="workspace">
         <div className="intro">
-          <p className="eyebrow">Natural language file automation</p>
-          <h1>Tell it what to clean up. Execute only the safe plan.</h1>
+          <p className="eyebrow">PromptShell</p>
+          <h1>Natural language terminal with a live file manager.</h1>
           <p>
-            The AI creates JSON. The backend executor touches only the demo folder
-            and only runs three approved actions with undo.
+            The current directory stays visible, file navigation updates the
+            prompt context, and every generated command is reviewed before it
+            runs.
           </p>
         </div>
 
         <CommandBox
           command={command}
+          cwd={cwd}
           isPlanning={isPlanning}
           onChange={setCommand}
           onPlan={handlePlan}
@@ -114,17 +136,26 @@ function App() {
         <div className="content-grid">
           <PlanPreview
             isExecuting={isExecuting}
-            isUndoing={isUndoing}
-            canUndo={canUndo}
             plan={plan}
-            onExecute={handleExecute}
-            onUndo={handleUndo}
+            onRequestExecute={handleRequestExecute}
           />
           <ProgressLog logs={logs} isExecuting={isExecuting} />
         </div>
       </section>
 
-      <FileList files={files} onRefresh={refreshFiles} />
+      <FileList
+        context={context}
+        onGoUp={handleGoUp}
+        onOpenFolder={handleOpenFolder}
+        onRefresh={() => refreshContext(cwd)}
+      />
+      <ReviewDialog
+        isOpen={isReviewOpen}
+        isExecuting={isExecuting}
+        plan={plan}
+        onCancel={() => setIsReviewOpen(false)}
+        onConfirm={handleExecute}
+      />
     </main>
   )
 }

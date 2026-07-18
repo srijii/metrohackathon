@@ -1,11 +1,15 @@
-import { CheckCircle2, Code2, RotateCcw } from 'lucide-react'
+import { ShieldCheck, Code2 } from 'lucide-react'
 
-function PlanPreview({ plan, isExecuting, isUndoing, canUndo, onExecute, onUndo }) {
+function renderCommand(item) {
+  return [item.command, ...item.args].join(' ')
+}
+
+function PlanPreview({ plan, isExecuting, onRequestExecute }) {
   return (
     <section className="panel">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">JSON plan</p>
+          <p className="eyebrow">Command plan</p>
           <h2>Review before execution</h2>
         </div>
         <Code2 size={20} />
@@ -13,30 +17,41 @@ function PlanPreview({ plan, isExecuting, isUndoing, canUndo, onExecute, onUndo 
 
       {plan ? (
         <>
-          <pre>{JSON.stringify(plan, null, 2)}</pre>
+          <div className="plan-list">
+            <p className={`risk risk-${plan.riskLevel}`}>Risk: {plan.riskLevel}</p>
+            {plan.warnings.length > 0 ? (
+              <div className="warnings">
+                {plan.warnings.map((warning) => (
+                  <p key={warning}>{warning}</p>
+                ))}
+              </div>
+            ) : null}
+
+            {plan.commands.map((item, index) => (
+              <div key={item.id} className="command-card">
+                <span>{index + 1}</span>
+                <div>
+                  <h3>{item.title}</h3>
+                  <code>{renderCommand(item)}</code>
+                  <span className="command-cwd">cwd: {item.cwd}</span>
+                  <p>{item.explanation}</p>
+                </div>
+              </div>
+            ))}
+          </div>
           <button
             type="button"
             className="execute-button"
             disabled={isExecuting}
-            onClick={onExecute}
+            onClick={onRequestExecute}
           >
-            <CheckCircle2 size={18} />
-            {isExecuting ? 'Executing...' : 'Execute approved plan'}
-          </button>
-          <button
-            type="button"
-            className="undo-button"
-            disabled={!canUndo || isUndoing || isExecuting}
-            onClick={onUndo}
-          >
-            <RotateCcw size={18} />
-            {isUndoing ? 'Undoing...' : 'Undo last operation'}
+            <ShieldCheck size={18} />
+            {isExecuting ? 'Executing...' : 'Review execution'}
           </button>
         </>
       ) : (
         <div className="empty-state">
-          Generate a plan to see the validated JSON that will be sent to the
-          executor.
+          Generate a plan to see commands, explanations, risk, and warnings.
         </div>
       )}
     </section>

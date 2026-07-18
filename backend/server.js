@@ -5,10 +5,12 @@ import express from 'express'
 import helmet from 'helmet'
 import morgan from 'morgan'
 import { ZodError } from 'zod'
-import { executePlan, listFiles, undoLastOperation } from './executor.js'
+import { executePlan, getContext } from './executor.js'
 import {
   createPlan,
   executeRequestSchema,
+  explainCommand,
+  explainRequestSchema,
   planRequestSchema,
 } from './planner.js'
 
@@ -27,15 +29,15 @@ app.get('/health', (_req, res) => {
   res.json({
     data: {
       ok: true,
-      service: 'file-automation',
+      service: 'promptshell',
       timestamp: new Date().toISOString(),
     },
   })
 })
 
-app.get('/files', async (_req, res, next) => {
+app.get('/context', async (req, res, next) => {
   try {
-    res.json({ data: { files: await listFiles() } })
+    res.json({ data: { context: await getContext(req.query.cwd || '.') } })
   } catch (error) {
     next(error)
   }
@@ -43,8 +45,8 @@ app.get('/files', async (_req, res, next) => {
 
 app.post('/plan', async (req, res, next) => {
   try {
-    const { command } = planRequestSchema.parse(req.body)
-    res.json({ data: { plan: await createPlan(command) } })
+    const { command, cwd } = planRequestSchema.parse(req.body)
+    res.json({ data: { plan: await createPlan(command, cwd) } })
   } catch (error) {
     next(error)
   }
@@ -59,9 +61,10 @@ app.post('/execute', async (req, res, next) => {
   }
 })
 
-app.post('/undo', async (_req, res, next) => {
+app.post('/explain', (req, res, next) => {
   try {
-    res.json({ data: await undoLastOperation() })
+    const payload = explainRequestSchema.parse(req.body)
+    res.json({ data: { explanation: explainCommand(payload) } })
   } catch (error) {
     next(error)
   }
@@ -95,7 +98,7 @@ app.use((error, _req, res, _next) => {
 })
 
 const server = app.listen(port, () => {
-  console.log(`File automation API listening on port ${port}`)
+  console.log(`PromptShell API listening on port ${port}`)
 })
 
 export default app

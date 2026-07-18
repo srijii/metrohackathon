@@ -1,76 +1,88 @@
 # Product
 
-Natural Language File Automation
+PromptShell
+
+## Pitch
+
+PromptShell is a natural language terminal. Instead of memorizing commands for `git`, `docker`, `npm`, or `python`, users describe what they want in English and PromptShell safely translates that into executable terminal commands.
 
 ## Problem
 
-People often have messy folders full of PDFs, images, videos, and random downloads. They know what they want in plain English, but doing it manually is slow and repetitive.
+Developers, students, data scientists, and Linux users constantly know the outcome they want but forget the exact terminal syntax. They search for commands like creating Python virtual environments, running Docker services, cloning projects, or undoing Git commits.
 
 ## Solution
 
-Build a small demo app that turns a natural-language command into a safe structured plan, then executes one of four fixed file automation actions inside a demo folder.
+Convert plain-English terminal requests into an explainable command plan. The user reviews each command, sees why it will run, approves it, and then watches the execution log.
 
-## Core Principle
+The UI also acts like a lightweight file manager: it shows the current working directory, lists the files and folders in that directory, and updates the view when the user navigates or executes a safe `cd` command.
 
-The AI never directly touches the filesystem.
+## MVP Workflows
+
+- Git status and basic Git recovery.
+- Clone a Git repository.
+- Create a Python virtual environment.
+- Install Python dependencies from `requirements.txt`.
+- Run a Python app.
+- Create a React/Vite app.
+- Run basic npm commands.
+- Run PostgreSQL in Docker.
+- Find files with safe `find` commands.
+- Navigate directories with `cd`.
+- Browse the current workspace in the file manager.
+
+## Core Flow
 
 ```text
-User command
+User describes task
   ↓
-LLM converts command to JSON
+Planner creates command plan
   ↓
-Backend validates JSON
+Validator blocks unsafe commands
   ↓
-Executor runs one allowed action
+User reviews the approval prompt
   ↓
-UI shows progress and changed files
+Executor runs commands sequentially
+  ↓
+Terminal log and working directory update
 ```
 
-## MVP
+## Safety
 
-- Simple command UI.
-- Suggested demo commands.
-- Convert user text into structured JSON.
-- Show the plan before execution.
-- Execute only approved actions after the user confirms.
-- Show progress log and file changes.
-- Explain why each file was moved, renamed, or converted.
-- Undo the last execution.
-- Use a local `backend/demo/` folder for fast stage demos.
-
-## Supported Actions
-
-- `rename_pdfs`
-- `organize_downloads`
-- `png_to_webp`
+- Never execute raw LLM text.
+- Validate every command.
+- Use an allowlist of executables.
+- Block destructive commands such as `rm`, `sudo`, `mkfs`, `dd`, `chmod -R`, and broad delete requests.
+- Require approval before execution.
+- Show a review prompt before any plan executes.
+- Show risk level and warnings.
+- Prefer local rule-based planning for common workflows.
+- Use NVIDIA LLM planning only as a fallback for less obvious requests.
 
 ## Non-Goals
 
-- No autonomous desktop agent.
-- No background monitoring.
-- No habit learning.
-- No workflow builder.
-- No arbitrary filesystem access.
-- No support for every file type.
-- No video compression during the hackathon MVP.
+- Not a full shell replacement.
+- Not an autonomous desktop operator.
+- Not cross-platform perfection in the MVP.
+- Not a workflow builder.
+- Not a way to bypass terminal safety.
 
-## Demo Script
+## Demo
 
-1. Open the app.
-2. Type: "My Downloads folder is a disaster."
-3. App creates a plan:
-   - rename PDFs
-   - convert PNGs to WebP except logos
-   - organize files
-4. Click execute.
-5. Progress log shows each step.
-6. File list visibly changes.
+Prompt:
 
-## Success Criteria
+```text
+Create a Python virtual environment and install requirements.
+```
 
-- A judge understands the app in 10 seconds.
-- The command produces structured JSON.
-- The executor only runs fixed safe actions.
-- The demo completes in 10-20 seconds.
-- File changes are visible immediately.
-- Undo restores the previous operation.
+Plan:
+
+```text
+1. python -m venv .venv
+2. .venv/bin/python -m pip install -r requirements.txt
+```
+
+Each command includes a reason and waits for explicit approval.
+
+## Differentiation
+
+PromptShell does not replace Bash. It replaces remembering syntax. It teaches by showing the command and the reason before it runs.

@@ -1,19 +1,31 @@
 # Architecture
 
-## Flow
+## Runtime Flow
 
 ```text
-Frontend command UI
+React UI
+  ↓ GET /context?cwd=.
+File manager + current directory
   ↓ POST /plan
-Planner service
+Planner
   ↓
-Validated JSON plan
+Zod validated command plan
   ↓ POST /execute
-Executor service
+Executor
   ↓
-Safe file operations in backend/demo/
+spawn(command, args, { shell: false })
   ↓
-Progress log + explanations + updated file list + undo log
+Terminal log + updated cwd returned to UI
+```
+
+## Backend
+
+```text
+backend/
+├── server.js      Express routes and error handling
+├── planner.js     Local planner + NVIDIA fallback + schemas
+├── executor.js    Command allowlist, safety checks, execution
+└── .env.example
 ```
 
 ## Frontend
@@ -21,68 +33,56 @@ Progress log + explanations + updated file list + undo log
 ```text
 frontend/src/
 ├── App.jsx
-├── main.jsx
-├── index.css
+├── App.css
 ├── components/
 │   ├── CommandBox.jsx
 │   ├── FileList.jsx
 │   ├── PlanPreview.jsx
+│   ├── ReviewDialog.jsx
 │   └── ProgressLog.jsx
 └── services/
     └── api.js
 ```
 
-## Backend
+`FileList` is the file-manager panel. It renders the current working directory, parent navigation, folders, and files returned by `/context`.
 
-```text
-backend/
-├── server.js
-├── planner.js
-├── executor.js
-├── demo/
-└── undo.json
-```
+## API
 
-## Demo Folder
-
-```text
-backend/demo/
-├── IMG_2948.jpg
-├── WhatsApp Image 2026-07-19 at 10.22.13.png
-├── Final_Final_Resume.pdf
-├── download (3).pdf
-├── Bank.pdf
-├── Screenshot 2026-07-19.png
-├── logo.png
-├── movie.mp4
-├── Presentation.pptx
-└── notes.txt
-```
+- `GET /health`
+- `GET /context?cwd=frontend`
+- `POST /plan`
+- `POST /execute`
+- `POST /explain`
 
 ## Plan Shape
 
 ```json
 {
-  "actions": [
-    {
-      "action": "rename_pdfs",
-      "folder": "demo",
-      "exclude": [],
-      "reason": "PDF names are messy and can be inferred from contents."
-    }
-  ],
+  "summary": "Set up a Python virtual environment.",
   "requiresApproval": true,
-  "riskLevel": "low",
+  "riskLevel": "medium",
   "warnings": [],
-  "summary": "Rename PDFs using demo-safe rules."
+  "commands": [
+    {
+      "id": "cmd_1",
+      "title": "Create virtual environment",
+      "command": "python",
+      "args": ["-m", "venv", ".venv"],
+      "cwd": ".",
+      "explanation": "Creates an isolated Python environment.",
+      "risk": "low",
+      "longRunning": false,
+      "interactive": false
+    }
+  ]
 }
 ```
 
-## Safety
+## Safety Boundary
 
-- Only the backend executor touches files.
-- Only `backend/demo/` is writable through this app.
-- Only known actions are executed.
-- LLM output is schema validated before execution.
-- No shell commands are generated from user text.
-- Undo records every rename, move, and created file.
+- Shell is disabled.
+- Commands are spawned directly.
+- Command executable must be allowlisted.
+- Arguments are scanned for destructive patterns.
+- The executor resolves all `cwd` values inside the project safe root.
+- High-risk plans can be previewed but blocked from execution.

@@ -1,14 +1,16 @@
 import { Play, Sparkles } from 'lucide-react'
 
 const SUGGESTIONS = [
-  'My Downloads folder is a disaster.',
-  'Rename every PDF according to its contents.',
-  'Convert all PNGs to WebP except logos.',
-  'Compress my videos and organize the folder.',
+  'Go to frontend.',
+  'Show git status.',
+  'Create a Python virtual environment and install requirements.',
+  'Run postgres in Docker on port 5432.',
+  'Find every PDF modified this week.',
 ]
 
 function CommandBox({
   command,
+  cwd,
   isPlanning,
   onChange,
   onPlan,
@@ -16,13 +18,16 @@ function CommandBox({
 }) {
   return (
     <section className="panel command-panel">
-      <label htmlFor="command">Enter a command</label>
+      <div className="command-header">
+        <label htmlFor="command">What do you want the terminal to do?</label>
+        <span className="path-pill">{cwd}</span>
+      </div>
       <div className="command-row">
         <input
           id="command"
           value={command}
           onChange={(event) => onChange(event.target.value)}
-          placeholder="Example: Convert all PNGs to WebP except logos."
+          placeholder="Example: Go to frontend and show git status."
         />
         <button type="button" disabled={isPlanning} onClick={() => onPlan()}>
           <Sparkles size={18} />

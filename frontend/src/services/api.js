@@ -2,7 +2,7 @@ import axios from 'axios'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000',
-  timeout: 15000,
+  timeout: 20000,
 })
 
 function unwrap(response) {
@@ -17,17 +17,17 @@ function normalizeError(error) {
   )
 }
 
-export async function getFiles() {
+export async function getContext(cwd = '.') {
   try {
-    return unwrap(await api.get('/files'))
+    return unwrap(await api.get('/context', { params: { cwd } }))
   } catch (error) {
     throw normalizeError(error)
   }
 }
 
-export async function createPlan(command) {
+export async function createPlan(command, cwd = '.') {
   try {
-    return unwrap(await api.post('/plan', { command }))
+    return unwrap(await api.post('/plan', { command, cwd }))
   } catch (error) {
     throw normalizeError(error)
   }
@@ -41,9 +41,9 @@ export async function executePlan(plan) {
   }
 }
 
-export async function undoLastOperation() {
+export async function explainCommand(command) {
   try {
-    return unwrap(await api.post('/undo'))
+    return unwrap(await api.post('/explain', command))
   } catch (error) {
     throw normalizeError(error)
   }

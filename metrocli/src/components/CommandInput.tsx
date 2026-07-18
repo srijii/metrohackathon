@@ -16,21 +16,20 @@ type CommandInputProps = {
 
 function CommandInput({ compact = false, cwd, disabled, onChange, onSubmit, statusLabel, value }: CommandInputProps) {
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor={colors.primary} paddingX={1}>
-      <Box justifyContent="space-between">
-        <Text color={colors.muted}>Prompt</Text>
-        {!compact ? <Text color={colors.success}>{truncate(cwd, 44)}</Text> : null}
-      </Box>
+    <Box flexDirection="column">
+      {!compact ? (
+        <Text color={colors.muted}>cwd {truncate(cwd, 60)}</Text>
+      ) : null}
       <Box>
         <Text color={colors.primary} bold>
-          {'> '}
+          {'❯ '}
         </Text>
         {disabled ? (
           <Text color={colors.muted}>{statusLabel}</Text>
         ) : (
           <TextInput
             value={value}
-            placeholder="create auth api using express and jwt"
+            placeholder=""
             onChange={(nextValue) => onChange(stripControlCharacters(nextValue))}
             onSubmit={(nextValue) => onSubmit(stripControlCharacters(nextValue))}
           />

@@ -303,6 +303,164 @@ function urlFrom(input: string) {
   return input.match(/https:\/\/[^\s]+/)?.[0]?.replace(/[),.]+$/g, '') || ''
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function asString(value: unknown, fallback = '') {
+  return typeof value === 'string' && value.trim() ? value.trim() : fallback
+}
+
+function asBoolean(value: unknown, fallback = false) {
+  if (typeof value === 'boolean') return value
+  if (typeof value === 'string') return value.toLowerCase() === 'true'
+  return fallback
+}
+
+function asStringArray(value: unknown) {
+  if (!Array.isArray(value)) return []
+  return value.filter((item): item is string => typeof item === 'string')
+}
+
+function normalizeRisk(value: unknown): RiskLevel {
+  if (value === 'low' || value === 'safe') return 'low'
+  if (value === 'medium' || value === 'moderate' || value === 'changes project') return 'medium'
+  if (value === 'high' || value === 'dangerous' || value === 'blocked') return 'high'
+  return 'medium'
+}
+
+function normalizeAiCommands(value: unknown, context: ProjectContext): CommandStep[] {
+  if (!Array.isArray(value)) return []
+
+  return value
+    .map((item, index) => {
+      if (!isRecord(item)) return null
+
+      const executable = asString(item.command || item.executable)
+      if (!allowedCommands.includes(executable as (typeof allowedCommands)[number])) {
+        return null
+      }
+
+      const args = Array.isArray(item.args)
+        ? item.args.map((arg) => String(arg))
+        : typeof item.args === 'string'
+          ? item.args.split(' ').filter(Boolean)
+          : []
+
+      return {
+        id: asString(item.id, `cmd_${index + 1}`),
+        title: asString(item.title, `Run ${executable}`),
+        command: executable,
+        args,
+        cwd: asString(item.cwd, context.cwd),
+        explanation: asString(item.explanation, 'Command selected by the validated AI planner.'),
+        risk: normalizeRisk(item.risk),
+        longRunning: asBoolean(item.longRunning, false),
+        interactive: asBoolean(item.interactive, false),
+      } satisfies CommandStep
+    })
+    .filter((item): item is CommandStep => item !== null)
+    .slice(0, 6)
+}
+
+function normalizeDiffPreview(value: unknown, commands: CommandStep[]): DiffPreview[] {
+  if (!Array.isArray(value)) return inferDiffPreview(commands)
+
+  const previews = value
+    .map((item) => {
+      if (!isRecord(item)) return null
+
+      const kind = item.kind === 'create' || item.kind === 'modify' || item.kind === 'delete'
+        ? item.kind
+        : 'modify'
+
+      return {
+        path: asString(item.path, '<unknown>'),
+        kind,
+        lines: asStringArray(item.lines),
+      } satisfies DiffPreview
+    })
+    .filter((item): item is DiffPreview => item !== null)
+    .slice(0, 6)
+
+  return previews.length > 0 ? previews : inferDiffPreview(commands)
+}
+
+function normalizeAiPlanPayload(value: unknown, context: ProjectContext) {
+  const source = isRecord(value) && isRecord(value.plan) ? value.plan : value
+  if (!isRecord(source)) {
+    throw new Error('AI planner returned an invalid JSON object.')
+  }
+
+  const commands = normalizeAiCommands(source.commands || source.actions, context)
+  if (commands.length === 0) {
+    throw new Error('AI planner did not return any allowed commands.')
+  }
+
+  const simulation = isRecord(source.simulation)
+    ? {
+        filesCreated: asStringArray(source.simulation.filesCreated),
+        filesModified: asStringArray(source.simulation.filesModified),
+        filesDeleted: asStringArray(source.simulation.filesDeleted),
+        networkRequired: asBoolean(source.simulation.networkRequired, inferSimulation(commands).networkRequired),
+        estimatedSeconds: Number.isInteger(source.simulation.estimatedSeconds)
+          ? Number(source.simulation.estimatedSeconds)
+          : inferSimulation(commands).estimatedSeconds,
+      }
+    : inferSimulation(commands)
+
+  const confidence = isRecord(source.confidence)
+    ? {
+        score: Number.isInteger(source.confidence.score)
+          ? Math.max(0, Math.min(100, Number(source.confidence.score)))
+          : inferConfidence(context, commands, false).score,
+        reasons: asStringArray(source.confidence.reasons),
+      }
+    : inferConfidence(context, commands, false)
+
+  const rollback = isRecord(source.rollback)
+    ? {
+        available: asBoolean(source.rollback.available, false),
+        command: asString(source.rollback.command, 'No rollback command supplied'),
+        explanation: asString(source.rollback.explanation, 'Rollback guidance was not supplied by the planner.'),
+      }
+    : inferRollback(commands)
+
+  const rejection = isRecord(source.rejection)
+    ? {
+        reason: asString(source.rejection.reason, 'The request was rejected by the planner.'),
+        policy: asString(source.rejection.policy, 'MetroCLI safety policy blocked this request.'),
+        alternative: asString(source.rejection.alternative, 'Ask for a safer, narrower operation.'),
+      }
+    : null
+
+  return {
+    summary: asString(source.summary, commands.map((command) => command.title).join(', ')),
+    requiresApproval: true,
+    riskLevel: normalizeRisk(source.riskLevel),
+    warnings: asStringArray(source.warnings),
+    simulation,
+    diffPreview: normalizeDiffPreview(source.diffPreview, commands),
+    confidence,
+    rollback,
+    rejection,
+    commands,
+  }
+}
+
+function fallbackPlan(context: ProjectContext, warning: string) {
+  return plan('Show current directory', [
+    step(
+      1,
+      context.cwd,
+      'Show current directory',
+      'pwd',
+      [],
+      'Safe fallback because the AI planner did not return a usable command plan.',
+    ),
+  ], [warning], { context })
+}
+
 function localPlan(input: string, context: ProjectContext) {
   const text = input.toLowerCase()
   const cwd = context.cwd
@@ -369,6 +527,26 @@ function localPlan(input: string, context: ProjectContext) {
   if (text.includes('git status') || text === 'status' || text.includes('repo status')) {
     return plan('Check repository status', [
       step(1, cwd, 'Show Git status', 'git', ['status', '--short'], 'Shows changed files without modifying the repository.'),
+    ], [], { context })
+  }
+
+  if (
+    text.includes('which folder') ||
+    text.includes('what folder') ||
+    text.includes('where am i') ||
+    text.includes('current folder') ||
+    text.includes('current directory') ||
+    text === 'pwd'
+  ) {
+    return plan('Show current working directory', [
+      step(
+        1,
+        cwd,
+        'Print working directory',
+        'pwd',
+        [],
+        'Prints the current working directory so you can confirm where commands will run.',
+      ),
     ], [], { context })
   }
 
@@ -605,20 +783,29 @@ export async function createPlan(
   }
 
   events.onStatus?.('Validating AI command JSON.')
-  const parsed = planSchema.parse(JSON.parse(extractJson(response)))
-  return {
-    ...parsed,
-    simulation: parsed.simulation.filesCreated.length > 0 ||
-      parsed.simulation.filesModified.length > 0 ||
-      parsed.simulation.filesDeleted.length > 0
-      ? parsed.simulation
-      : inferSimulation(parsed.commands),
-    diffPreview: parsed.diffPreview.length > 0
-      ? parsed.diffPreview
-      : inferDiffPreview(parsed.commands),
-    confidence: parsed.confidence.reasons.length > 0
-      ? parsed.confidence
-      : inferConfidence(context, parsed.commands, false),
-    rollback: parsed.rollback ?? inferRollback(parsed.commands),
+  try {
+    const normalized = normalizeAiPlanPayload(JSON.parse(extractJson(response)), context)
+    const parsed = planSchema.parse(normalized)
+    return {
+      ...parsed,
+      simulation: parsed.simulation.filesCreated.length > 0 ||
+        parsed.simulation.filesModified.length > 0 ||
+        parsed.simulation.filesDeleted.length > 0
+        ? parsed.simulation
+        : inferSimulation(parsed.commands),
+      diffPreview: parsed.diffPreview.length > 0
+        ? parsed.diffPreview
+        : inferDiffPreview(parsed.commands),
+      confidence: parsed.confidence.reasons.length > 0
+        ? parsed.confidence
+        : inferConfidence(context, parsed.commands, false),
+      rollback: parsed.rollback ?? inferRollback(parsed.commands),
+    }
+  } catch (error) {
+    events.onStatus?.(`AI plan rejected: ${error instanceof Error ? error.message : 'invalid schema'}`)
+    return fallbackPlan(
+      context,
+      'The NVIDIA planner returned an invalid command plan, so MetroCLI used a safe fallback.',
+    )
   }
 }

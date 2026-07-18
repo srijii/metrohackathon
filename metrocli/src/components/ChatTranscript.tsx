@@ -26,20 +26,20 @@ function ChatTranscript({ maxLines = 4, maxMessages = 5, messages }: ChatTranscr
   const visible = messages.slice(-maxMessages)
 
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor={colors.border} paddingX={1}>
+    <Box flexDirection="column">
       <Text color={colors.primary} bold>
-        AI Planner
+        ◇ AI Planner
       </Text>
       {visible.length === 0 ? (
-        <Text color={colors.muted}>Ask MetroCLI to plan a terminal task.</Text>
+        <Text color={colors.muted}>│ Ask MetroCLI to plan a terminal task.</Text>
       ) : (
         visible.map((message) => (
-          <Box key={message.id} flexDirection="column" marginBottom={1}>
+          <Box key={message.id} flexDirection="column">
             <Text color={colorFor(message.role)} bold>
-              {labelFor(message.role)}:
+              │ {labelFor(message.role)}:
             </Text>
             {message.lines.slice(0, maxLines).map((line, index) => (
-              <Text key={`${message.id}-${index}`}>{truncate(line, 76)}</Text>
+              <Text key={`${message.id}-${index}`}>│ {truncate(line, 96)}</Text>
             ))}
           </Box>
         ))

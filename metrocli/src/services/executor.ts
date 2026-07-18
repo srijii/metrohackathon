@@ -4,6 +4,7 @@ import type { CommandPlan, ExecutionResult } from '../state/app.js'
 import { allowedCommands, planSchema } from './planner.js'
 import { resolveInsideRoot } from './project.js'
 import { renderCommand } from '../utils/logger.js'
+import { cleanText } from '../utils/text.js'
 
 const blockedArgs = ['rm', 'sudo', 'su', 'mkfs', 'dd', 'chmod -R', 'chown -R', '&&', ';', '|', '>', '<', '$(', '`']
 
@@ -65,7 +66,7 @@ export async function executePlan(root: string, plan: CommandPlan): Promise<{ cw
       exitCode: output.exitCode ?? 1,
       logs: [
         `$ ${renderCommand(command.command, command.args)}`,
-        ...(output.all?.split('\n').filter(Boolean) || []),
+        ...(output.all?.split('\n').map(cleanText).filter(Boolean) || []),
         output.exitCode === 0 ? '[ok] Done' : `[x] Exited with code ${output.exitCode}`,
       ],
     }

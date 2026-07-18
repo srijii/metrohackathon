@@ -14,11 +14,22 @@ import { executePlan } from '../services/executor.js'
 import { analyzeProject } from '../services/project.js'
 import type { AppScreen, ChatMessage, ProjectContext } from '../state/app.js'
 import { colors } from '../utils/colors.js'
+import { truncate } from '../utils/text.js'
 
-const STARTER_PROMPT = 'show git status'
+const STARTER_PROMPT = ''
 
 function relativeLabel(root: string, cwd: string) {
   return cwd === root ? '.' : cwd.replace(`${root}/`, '')
+}
+
+function readableError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error)
+
+  if (message.trim().startsWith('[') || message.includes('Invalid input')) {
+    return 'Planner returned an invalid response. MetroCLI kept execution blocked.'
+  }
+
+  return truncate(message, 96)
 }
 
 function Home() {
@@ -30,7 +41,7 @@ function Home() {
   const isShort = terminalRows < 30
   const isTiny = terminalRows < 21
   const isMicro = terminalRows < 14
-  const showHeader = terminalRows >= 15
+  const showHeader = terminalRows >= 10
   const showSidebar = !isNarrow && !isShort
   const showLogs = terminalRows >= 22
   const [cwd, setCwd] = useState(root)
@@ -44,7 +55,7 @@ function Home() {
   const [isExecuting, setIsExecuting] = useState(false)
   const [historyIndex, setHistoryIndex] = useState(-1)
   const { history, plan, planCommand, setPlan } = useCommands()
-  const showPlanner = plan ? terminalRows >= 14 : terminalRows >= 24
+  const showPlanner = Boolean(plan) && terminalRows >= 14
 
   async function refresh(nextCwd = cwd) {
     const nextContext = await analyzeProject(root, nextCwd)
@@ -146,7 +157,7 @@ function Home() {
   }
 
   useEffect(() => {
-    refresh().catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)))
+    refresh().catch((err: unknown) => setError(readableError(err)))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -162,6 +173,7 @@ function Home() {
     setScreen('planning')
     setHistoryIndex(-1)
     setLogs([])
+    setInput('')
     appendMessage('user', [value])
     appendMessage('assistant', ['Thinking...', 'Analyzing repository...'])
 
@@ -190,7 +202,7 @@ function Home() {
       ])
       setLogs((items) => [...items, 'Waiting for approval.'])
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(readableError(err))
       setScreen('home')
     } finally {
       setIsPlanning(false)
@@ -221,7 +233,7 @@ function Home() {
       setPlan(null)
       setScreen('home')
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(readableError(err))
       setScreen('plan')
     } finally {
       setIsExecuting(false)
@@ -264,12 +276,14 @@ function Home() {
       {!isMicro ? (
         <Box flexDirection={showSidebar ? 'row' : 'column'} flexGrow={1} gap={1}>
           <Box flexDirection="column" width={showSidebar ? '64%' : '100%'}>
-            <ChatTranscript
-              maxLines={isTiny ? 2 : isShort ? 3 : 4}
-              maxMessages={isTiny ? 2 : 4}
-              messages={messages}
-            />
-          <Progress active={isPlanning} label="Planning..." />
+            {messages.length > 0 || !plan ? (
+              <ChatTranscript
+                maxLines={isTiny ? 1 : isShort ? 2 : 3}
+                maxMessages={isTiny ? 2 : 3}
+                messages={messages}
+              />
+            ) : null}
+            <Progress active={isPlanning} label="Planning..." />
             {showPlanner ? <Plan compact={isShort} plan={plan} /> : null}
             {showLogs ? <Execute logs={logs} maxLines={isShort ? 4 : 8} /> : null}
           </Box>

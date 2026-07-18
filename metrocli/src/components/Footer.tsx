@@ -10,7 +10,7 @@ type FooterProps = {
 
 function Footer({ compact = false, status, tiny = false }: FooterProps) {
   return (
-    <Box borderStyle="single" borderColor={colors.border} paddingX={1} justifyContent="space-between">
+    <Box justifyContent="space-between">
       <Text color={colors.muted}>
         {tiny
           ? 'Enter | Esc | q'

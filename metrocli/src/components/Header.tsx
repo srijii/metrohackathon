@@ -10,14 +10,14 @@ type HeaderProps = {
 
 function Header({ context }: HeaderProps) {
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor={colors.primary} paddingX={1}>
+    <Box flexDirection="column">
       <Box justifyContent="space-between">
         <Text color={colors.primary} bold>
           MetroCLI AI
         </Text>
         <Text color={colors.muted}>Node + Ink</Text>
       </Box>
-      <Box marginTop={1} justifyContent="space-between">
+      <Box justifyContent="space-between">
         <Text>
           Project: <Text bold>{truncate(context?.projectName || 'loading', 24)}</Text>
         </Text>

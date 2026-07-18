@@ -1,121 +1,107 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { useEffect, useState } from 'react'
+import {
+  createPlan,
+  executePlan,
+  getFiles,
+} from './services/api.js'
+import CommandBox from './components/CommandBox.jsx'
+import FileList from './components/FileList.jsx'
+import PlanPreview from './components/PlanPreview.jsx'
+import ProgressLog from './components/ProgressLog.jsx'
 import './App.css'
 
+const STARTER_COMMAND = 'My Downloads folder is a disaster.'
+
 function App() {
-  const [count, setCount] = useState(0)
+  const [command, setCommand] = useState(STARTER_COMMAND)
+  const [plan, setPlan] = useState(null)
+  const [files, setFiles] = useState([])
+  const [logs, setLogs] = useState([])
+  const [error, setError] = useState('')
+  const [isPlanning, setIsPlanning] = useState(false)
+  const [isExecuting, setIsExecuting] = useState(false)
+
+  async function refreshFiles() {
+    const data = await getFiles()
+    setFiles(data.files)
+  }
+
+  useEffect(() => {
+    refreshFiles().catch((err) => setError(err.message))
+  }, [])
+
+  async function handlePlan(nextCommand = command) {
+    setError('')
+    setLogs([])
+    setIsPlanning(true)
+
+    try {
+      const data = await createPlan(nextCommand)
+      setPlan(data.plan)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setIsPlanning(false)
+    }
+  }
+
+  async function handleExecute() {
+    if (!plan) return
+
+    setError('')
+    setIsExecuting(true)
+    setLogs(['Executor approved. Starting safe demo actions...'])
+
+    try {
+      const data = await executePlan(plan)
+      setLogs(data.logs)
+      setFiles(data.files)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setIsExecuting(false)
+    }
+  }
+
+  function handleUseSuggestion(nextCommand) {
+    setCommand(nextCommand)
+    handlePlan(nextCommand)
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
+    <main className="app-shell">
+      <section className="workspace">
+        <div className="intro">
+          <p className="eyebrow">Natural language file automation</p>
+          <h1>Tell it what to clean up. Execute only the safe plan.</h1>
           <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
+            The AI creates JSON. The backend executor touches only the demo folder
+            and only runs four approved actions.
           </p>
         </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
 
-      <div className="ticks"></div>
+        <CommandBox
+          command={command}
+          isPlanning={isPlanning}
+          onChange={setCommand}
+          onPlan={handlePlan}
+          onUseSuggestion={handleUseSuggestion}
+        />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
+        {error ? <div className="error">{error}</div> : null}
+
+        <div className="content-grid">
+          <PlanPreview
+            isExecuting={isExecuting}
+            plan={plan}
+            onExecute={handleExecute}
+          />
+          <ProgressLog logs={logs} isExecuting={isExecuting} />
         </div>
       </section>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      <FileList files={files} onRefresh={refreshFiles} />
+    </main>
   )
 }
 

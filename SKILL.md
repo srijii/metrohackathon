@@ -1,110 +1,53 @@
 # Coding Rules
 
-Use this file as project-specific instructions for Codex.
+This project is a 2-hour hackathon prototype for natural language file automation.
 
-## Build For
+## Architecture Rule
 
-AI Urban Assistant hackathon MVP:
+The LLM only plans. The executor performs file operations.
 
-- Leaflet/OpenStreetMap map.
-- Click-to-select location.
-- AI chat over mocked city data.
-- Civic issue reporting through chat or a small form.
-- Simple mocked bus/accessibility suggestions.
+Never let model output become a shell command or unchecked path.
 
 ## Use
 
 - React functional components.
-- React hooks only.
-- JavaScript with ES Modules.
-- Vite for frontend.
-- Express for backend.
-- Zod for backend validation.
+- Express with ES Modules.
+- OpenAI SDK for planning when an API key is available.
+- Zod for validating request bodies and generated plans.
 - Axios for frontend API calls.
-- React Leaflet and Leaflet for maps.
-- lucide-react for icons.
-- Mock data files before any real API.
+- Node filesystem APIs for demo-safe execution.
 
-## Do Not Use
+## Avoid
 
-- Class components.
-- TypeScript.
-- Redux.
-- A routing engine.
-- Real traffic APIs.
-- Computer vision.
-- Live government/civic APIs.
-- OpenAI calls from frontend code.
-- Large abstractions before the MVP works.
+- No agent framework.
+- No autonomous desktop control.
+- No arbitrary folder access.
+- No shell execution from user text.
+- No broad file type support.
+- No complex UI.
 
-## Always
+## Executor Constraints
 
-- Keep files readable and ideally under 300 lines.
-- Split UI into small components.
-- Put API calls in `frontend/src/services/api.js`.
-- Put mock city data in `frontend/src/data/` or `backend/src/data/`.
-- Validate backend request bodies with Zod.
-- Return predictable JSON:
-  - Success: `{ "data": ... }`
-  - Error: `{ "error": { "message": "...", "code": "..." } }`
-- Handle loading, empty, and error states.
-- Keep the demo path working after every change.
+- Operate only inside `backend/demo/`.
+- Support only:
+  - `rename_pdfs`
+  - `organize_downloads`
+  - `compress_videos`
+  - `png_to_webp`
+- Validate every plan with Zod.
+- Return progress logs for every changed file.
+- Keep operations deterministic for the demo.
 
-## Frontend Structure
+## Frontend
 
-Prefer:
+- Keep the first screen usable.
+- Show command input, suggested commands, plan preview, execute button, progress log, and current demo files.
+- Prioritize clarity over visual decoration.
 
-```text
-frontend/src/
-├── App.jsx
-├── components/
-│   ├── MapView.jsx
-│   ├── AssistantPanel.jsx
-│   ├── LocationPanel.jsx
-│   └── IssueReportForm.jsx
-├── data/
-│   └── mockCityData.js
-├── services/
-│   └── api.js
-└── utils/
-    └── distance.js
-```
+## Backend
 
-## Backend Structure
-
-Prefer:
-
-```text
-backend/src/
-├── server.js
-├── app.js
-├── routes/
-│   ├── chat.js
-│   ├── reports.js
-│   └── cityData.js
-├── schemas/
-│   ├── chatSchema.js
-│   └── reportSchema.js
-├── services/
-│   ├── aiService.js
-│   ├── cityDataService.js
-│   └── promptService.js
-└── data/
-    └── mockCityData.js
-```
-
-## AI Behavior
-
-- Read the system prompt from root `PROMPTS.md`.
-- Use only supplied mock city data.
-- If nearby data is missing, say unknown.
-- Keep answers brief and demo-friendly.
-- Do not claim live accuracy.
-
-## Task Workflow
-
-- Read `TASKS.md`.
-- Complete one unchecked task at a time.
-- Update `TASKS.md` when a task is done.
-- Update `API.md` when backend routes change.
-- Update `ARCHITECTURE.md` when structure changes.
+- Keep controllers thin.
+- Put planning in `services/plannerService.js`.
+- Put file execution in `services/executorService.js`.
+- Put demo file utilities in `services/demoFileService.js`.
+- Put schemas in `schemas/`.

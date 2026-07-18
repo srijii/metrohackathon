@@ -1,42 +1,22 @@
 # Architecture
 
-## App
-
-AI Urban Assistant is a small map-first application.
+## Flow
 
 ```text
-User clicks map
+Frontend command UI
+  ↓ POST /plan
+Planner service
   ↓
-Frontend stores selected location
+Validated JSON plan
+  ↓ POST /execute
+Executor service
   ↓
-User asks question
+Safe file operations in backend/demo/
   ↓
-Frontend POSTs question + location
-  ↓
-Backend finds nearby mock city data
-  ↓
-Backend sends prompt + data to LLM
-  ↓
-Frontend displays answer
-```
-
-## Root Files
-
-```text
-PRD.md          Product requirements
-SKILL.md        Coding rules for Codex
-ARCHITECTURE.md System structure
-TASKS.md        Hackathon task board
-API.md          Backend API contracts
-PROMPTS.md      AI assistant prompt
-README.md       Run instructions
+Progress log + updated file list
 ```
 
 ## Frontend
-
-Lives in `frontend/`.
-
-Recommended structure:
 
 ```text
 frontend/src/
@@ -44,139 +24,70 @@ frontend/src/
 ├── main.jsx
 ├── index.css
 ├── components/
-│   ├── AssistantPanel.jsx
-│   ├── IssueReportForm.jsx
-│   ├── LocationPanel.jsx
-│   ├── MapView.jsx
-│   └── PromptChips.jsx
-├── data/
-│   └── mockCityData.js
-├── services/
-│   └── api.js
-└── utils/
-    └── geo.js
+│   ├── CommandBox.jsx
+│   ├── FileList.jsx
+│   ├── PlanPreview.jsx
+│   └── ProgressLog.jsx
+└── services/
+    └── api.js
 ```
-
-### Frontend Responsibilities
-
-- Render Leaflet/OpenStreetMap.
-- Let user click anywhere to select a location.
-- Display selected latitude and longitude.
-- Show nearby mocked places/issues if available.
-- Send chat questions to backend.
-- Render assistant answer, loading state, and error state.
-- Optionally submit civic issue reports.
 
 ## Backend
 
-Lives in `backend/`.
-
-Recommended structure:
-
 ```text
 backend/src/
-├── server.js
 ├── app.js
+├── server.js
+├── controllers/
+│   ├── automationController.js
+│   └── healthController.js
 ├── routes/
-│   ├── chat.js
-│   ├── cityData.js
-│   └── reports.js
+│   ├── automationRoutes.js
+│   └── healthRoutes.js
 ├── schemas/
-│   ├── chatSchema.js
-│   └── reportSchema.js
+│   └── automationSchemas.js
 ├── services/
-│   ├── aiService.js
-│   ├── cityDataService.js
-│   └── promptService.js
-└── data/
-    └── mockCityData.js
+│   ├── demoFileService.js
+│   ├── executorService.js
+│   └── plannerService.js
+└── utils/
+    ├── env.js
+    └── errors.js
 ```
 
-### Backend Responsibilities
+## Demo Folder
 
-- Validate request bodies.
-- Load `PROMPTS.md`.
-- Select nearby mocked city data for the clicked location.
-- Call OpenAI when `OPENAI_API_KEY` exists.
-- Return a deterministic fallback answer when no API key exists.
-- Accept simple civic reports.
+```text
+backend/demo/
+├── invoice.pdf
+├── invoice2.pdf
+├── resume.pdf
+├── image1.png
+├── logo.png
+├── video.mp4
+└── notes.txt
+```
 
-## Mock City Data
+## Plan Shape
 
-Use mock data only for the hackathon MVP.
-
-```js
+```json
 {
-  accessibilityZones: [
+  "actions": [
     {
-      id: "zone_accessible_1",
-      name: "Central Market Entrance",
-      lat: 12.9716,
-      lng: 77.5946,
-      radiusMeters: 350,
-      wheelchairFriendly: true,
-      notes: "Ramp access and wide pavement in demo data."
+      "action": "rename_pdfs",
+      "folder": "demo",
+      "exclude": []
     }
   ],
-  transitStops: [
-    {
-      id: "bus_stop_1",
-      name: "Museum Road Bus Stop",
-      type: "bus",
-      lat: 12.9721,
-      lng: 77.5951,
-      routes: ["12A", "K3"],
-      notes: "Frequent buses in mock data."
-    }
-  ],
-  civicIssues: [
-    {
-      id: "issue_1",
-      type: "pothole",
-      lat: 12.9709,
-      lng: 77.5942,
-      status: "open",
-      notes: "Reported pothole near crossing in demo data."
-    }
-  ]
+  "requiresApproval": true,
+  "summary": "Rename PDFs using demo-safe rules."
 }
 ```
 
-## AI Context
+## Safety
 
-Backend should send this shape to the LLM:
-
-```js
-{
-  question,
-  selectedLocation: { lat, lng },
-  nearbyData: {
-    accessibilityZones,
-    transitStops,
-    civicIssues
-  }
-}
-```
-
-## Important Constraints
-
-- No routing engine.
-- No real traffic.
-- No computer vision.
-- No live official claims.
-- Route suggestions are plain-language recommendations from mock data.
-
-## Environment
-
-Frontend:
-
-```text
-VITE_API_BASE_URL=http://localhost:3000
-```
-
-Backend:
-
-```text
-PORT=3000
-OPENAI_API_KEY=
-```
+- Only the backend executor touches files.
+- Only `backend/demo/` is writable through this app.
+- Only known actions are executed.
+- LLM output is schema validated before execution.
+- No shell commands are generated from user text.

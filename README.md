@@ -1,27 +1,15 @@
-# AI Urban Assistant
+# Natural Language File Automation
 
-Hackathon MVP: click anywhere on a Leaflet/OpenStreetMap map and ask an AI assistant about accessibility, civic issues, or nearby bus options using mocked city data.
+Hackathon demo: type a plain-English command, convert it into a safe JSON plan, then execute one of four fixed file automation actions inside `backend/demo/`.
 
-## Features
+## Supported Actions
 
-- Interactive Leaflet map.
-- Click-to-select location.
-- AI chat for selected location.
-- Mock accessibility, transit, and civic issue data.
-- Civic issue report flow.
-- No routing engine.
-- No real traffic.
-- No computer vision.
+- Rename PDFs
+- Organize downloads
+- Compress videos
+- Convert PNG to WebP
 
 ## Run
-
-Frontend:
-
-```sh
-cd frontend
-pnpm install
-pnpm dev
-```
 
 Backend:
 
@@ -31,32 +19,36 @@ pnpm install
 pnpm dev
 ```
 
-## Environment
-
 Frontend:
 
-```text
-VITE_API_BASE_URL=http://localhost:3000
+```sh
+cd frontend
+pnpm install
+pnpm dev
 ```
+
+Open:
+
+```text
+http://localhost:5173
+```
+
+## Environment
 
 Backend:
 
 ```text
 PORT=3000
+CLIENT_ORIGIN=http://localhost:5173
 OPENAI_API_KEY=
+OPENAI_MODEL=gpt-4o-mini
 ```
 
-`OPENAI_API_KEY` is optional for local demo work if the backend provides a mock fallback.
+If `OPENAI_API_KEY` is missing, the app uses a deterministic fallback planner.
 
-## Codex Workflow
+## Safety
 
-Read these files before coding:
-
-- `PRD.md`: exact product scope.
-- `SKILL.md`: coding rules.
-- `ARCHITECTURE.md`: app structure.
-- `TASKS.md`: task board.
-- `API.md`: route contracts.
-- `PROMPTS.md`: assistant behavior.
-
-Then complete one unchecked task from `TASKS.md` at a time.
+- The LLM only produces JSON.
+- The executor only supports four actions.
+- File changes are limited to `backend/demo/`.
+- No arbitrary shell commands are generated or executed.

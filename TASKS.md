@@ -11,7 +11,7 @@
 
 - [x] Accept natural-language command.
 - [x] Convert command to structured JSON.
-- [x] Add OpenAI planning when `OPENAI_API_KEY` exists.
+- [x] Add NVIDIA planning when `NVIDIA_API_KEY` exists.
 - [x] Add deterministic fallback planner.
 - [x] Validate plan with Zod.
 
@@ -19,10 +19,11 @@
 
 - [x] Implement `rename_pdfs`.
 - [x] Implement `organize_downloads`.
-- [x] Implement `compress_videos`.
 - [x] Implement `png_to_webp`.
 - [x] Restrict execution to `backend/demo/`.
 - [x] Return progress logs.
+- [x] Add undo last operation.
+- [x] Add reasons for each executed action.
 
 ## UI
 
@@ -30,6 +31,7 @@
 - [x] Suggested commands.
 - [x] Plan preview.
 - [x] Execute button.
+- [x] Undo button.
 - [x] Progress log.
 - [x] Demo file list.
 

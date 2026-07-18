@@ -13,6 +13,7 @@ Never let model output become a shell command or unchecked path.
 - React functional components.
 - Express with ES Modules.
 - OpenAI SDK for planning when an API key is available.
+- NVIDIA's OpenAI-compatible endpoint for the planner.
 - Zod for validating request bodies and generated plans.
 - Axios for frontend API calls.
 - Node filesystem APIs for demo-safe execution.
@@ -32,10 +33,11 @@ Never let model output become a shell command or unchecked path.
 - Support only:
   - `rename_pdfs`
   - `organize_downloads`
-  - `compress_videos`
   - `png_to_webp`
 - Validate every plan with Zod.
 - Return progress logs for every changed file.
+- Include a reason for every action and major file change.
+- Record undo operations in `backend/undo.json`.
 - Keep operations deterministic for the demo.
 
 ## Frontend
@@ -47,7 +49,8 @@ Never let model output become a shell command or unchecked path.
 ## Backend
 
 - Keep controllers thin.
-- Put planning in `services/plannerService.js`.
-- Put file execution in `services/executorService.js`.
-- Put demo file utilities in `services/demoFileService.js`.
-- Put schemas in `schemas/`.
+- Keep backend implementation simple:
+  - `server.js`
+  - `planner.js`
+  - `executor.js`
+  - `demo/`

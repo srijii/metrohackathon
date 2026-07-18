@@ -40,3 +40,11 @@ export async function executePlan(plan) {
     throw normalizeError(error)
   }
 }
+
+export async function undoLastOperation() {
+  try {
+    return unwrap(await api.post('/undo'))
+  } catch (error) {
+    throw normalizeError(error)
+  }
+}

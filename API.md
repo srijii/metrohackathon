@@ -100,9 +100,28 @@ Returns:
 }
 ```
 
+## Undo
+
+```http
+POST /undo
+```
+
+Restores the last execution recorded in `backend/undo.json`.
+
+Returns:
+
+```json
+{
+  "data": {
+    "logs": ["Undoing last operation...", "Undo complete."],
+    "files": [],
+    "canUndo": false
+  }
+}
+```
+
 ## Supported Actions
 
 - `rename_pdfs`
 - `organize_downloads`
-- `compress_videos`
 - `png_to_webp`

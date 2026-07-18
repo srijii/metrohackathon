@@ -3,6 +3,7 @@ import {
   createPlan,
   executePlan,
   getFiles,
+  undoLastOperation,
 } from './services/api.js'
 import CommandBox from './components/CommandBox.jsx'
 import FileList from './components/FileList.jsx'
@@ -20,6 +21,8 @@ function App() {
   const [error, setError] = useState('')
   const [isPlanning, setIsPlanning] = useState(false)
   const [isExecuting, setIsExecuting] = useState(false)
+  const [isUndoing, setIsUndoing] = useState(false)
+  const [canUndo, setCanUndo] = useState(false)
 
   async function refreshFiles() {
     const data = await getFiles()
@@ -56,10 +59,28 @@ function App() {
       const data = await executePlan(plan)
       setLogs(data.logs)
       setFiles(data.files)
+      setCanUndo(data.canUndo)
     } catch (err) {
       setError(err.message)
     } finally {
       setIsExecuting(false)
+    }
+  }
+
+  async function handleUndo() {
+    setError('')
+    setIsUndoing(true)
+    setLogs(['Undo requested. Restoring previous file state...'])
+
+    try {
+      const data = await undoLastOperation()
+      setLogs(data.logs)
+      setFiles(data.files)
+      setCanUndo(data.canUndo)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setIsUndoing(false)
     }
   }
 
@@ -76,7 +97,7 @@ function App() {
           <h1>Tell it what to clean up. Execute only the safe plan.</h1>
           <p>
             The AI creates JSON. The backend executor touches only the demo folder
-            and only runs four approved actions.
+            and only runs three approved actions with undo.
           </p>
         </div>
 
@@ -93,8 +114,11 @@ function App() {
         <div className="content-grid">
           <PlanPreview
             isExecuting={isExecuting}
+            isUndoing={isUndoing}
+            canUndo={canUndo}
             plan={plan}
             onExecute={handleExecute}
+            onUndo={handleUndo}
           />
           <ProgressLog logs={logs} isExecuting={isExecuting} />
         </div>

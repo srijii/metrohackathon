@@ -13,7 +13,7 @@ Executor service
   ↓
 Safe file operations in backend/demo/
   ↓
-Progress log + updated file list
+Progress log + explanations + updated file list + undo log
 ```
 
 ## Frontend
@@ -35,36 +35,27 @@ frontend/src/
 ## Backend
 
 ```text
-backend/src/
-├── app.js
+backend/
 ├── server.js
-├── controllers/
-│   ├── automationController.js
-│   └── healthController.js
-├── routes/
-│   ├── automationRoutes.js
-│   └── healthRoutes.js
-├── schemas/
-│   └── automationSchemas.js
-├── services/
-│   ├── demoFileService.js
-│   ├── executorService.js
-│   └── plannerService.js
-└── utils/
-    ├── env.js
-    └── errors.js
+├── planner.js
+├── executor.js
+├── demo/
+└── undo.json
 ```
 
 ## Demo Folder
 
 ```text
 backend/demo/
-├── invoice.pdf
-├── invoice2.pdf
-├── resume.pdf
-├── image1.png
+├── IMG_2948.jpg
+├── WhatsApp Image 2026-07-19 at 10.22.13.png
+├── Final_Final_Resume.pdf
+├── download (3).pdf
+├── Bank.pdf
+├── Screenshot 2026-07-19.png
 ├── logo.png
-├── video.mp4
+├── movie.mp4
+├── Presentation.pptx
 └── notes.txt
 ```
 
@@ -76,10 +67,13 @@ backend/demo/
     {
       "action": "rename_pdfs",
       "folder": "demo",
-      "exclude": []
+      "exclude": [],
+      "reason": "PDF names are messy and can be inferred from contents."
     }
   ],
   "requiresApproval": true,
+  "riskLevel": "low",
+  "warnings": [],
   "summary": "Rename PDFs using demo-safe rules."
 }
 ```
@@ -91,3 +85,4 @@ backend/demo/
 - Only known actions are executed.
 - LLM output is schema validated before execution.
 - No shell commands are generated from user text.
+- Undo records every rename, move, and created file.

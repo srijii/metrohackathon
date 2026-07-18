@@ -1,6 +1,6 @@
-import { CheckCircle2, Code2 } from 'lucide-react'
+import { CheckCircle2, Code2, RotateCcw } from 'lucide-react'
 
-function PlanPreview({ plan, isExecuting, onExecute }) {
+function PlanPreview({ plan, isExecuting, isUndoing, canUndo, onExecute, onUndo }) {
   return (
     <section className="panel">
       <div className="panel-heading">
@@ -22,6 +22,15 @@ function PlanPreview({ plan, isExecuting, onExecute }) {
           >
             <CheckCircle2 size={18} />
             {isExecuting ? 'Executing...' : 'Execute approved plan'}
+          </button>
+          <button
+            type="button"
+            className="undo-button"
+            disabled={!canUndo || isUndoing || isExecuting}
+            onClick={onUndo}
+          >
+            <RotateCcw size={18} />
+            {isUndoing ? 'Undoing...' : 'Undo last operation'}
           </button>
         </>
       ) : (

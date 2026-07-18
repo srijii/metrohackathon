@@ -6,8 +6,8 @@ Hackathon demo: type a plain-English command, convert it into a safe JSON plan, 
 
 - Rename PDFs
 - Organize downloads
-- Compress videos
 - Convert PNG to WebP
+- Undo last operation
 
 ## Run
 
@@ -40,15 +40,17 @@ Backend:
 ```text
 PORT=3000
 CLIENT_ORIGIN=http://localhost:5173
-OPENAI_API_KEY=
-OPENAI_MODEL=gpt-4o-mini
+NVIDIA_API_KEY=
+NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1
+NVIDIA_MODEL=z-ai/glm-5.2
 ```
 
-If `OPENAI_API_KEY` is missing, the app uses a deterministic fallback planner.
+If `NVIDIA_API_KEY` is missing, the app uses a deterministic fallback planner.
 
 ## Safety
 
 - The LLM only produces JSON.
-- The executor only supports four actions.
+- The executor only supports three actions.
 - File changes are limited to `backend/demo/`.
 - No arbitrary shell commands are generated or executed.
+- Undo is recorded in `backend/undo.json`.

@@ -32,15 +32,16 @@ UI shows progress and changed files
 - Suggested demo commands.
 - Convert user text into structured JSON.
 - Show the plan before execution.
-- Execute only approved actions.
+- Execute only approved actions after the user confirms.
 - Show progress log and file changes.
+- Explain why each file was moved, renamed, or converted.
+- Undo the last execution.
 - Use a local `backend/demo/` folder for fast stage demos.
 
 ## Supported Actions
 
 - `rename_pdfs`
 - `organize_downloads`
-- `compress_videos`
 - `png_to_webp`
 
 ## Non-Goals
@@ -51,7 +52,7 @@ UI shows progress and changed files
 - No workflow builder.
 - No arbitrary filesystem access.
 - No support for every file type.
-- No real 2 GB video compression during demo.
+- No video compression during the hackathon MVP.
 
 ## Demo Script
 
@@ -60,7 +61,6 @@ UI shows progress and changed files
 3. App creates a plan:
    - rename PDFs
    - convert PNGs to WebP except logos
-   - compress videos
    - organize files
 4. Click execute.
 5. Progress log shows each step.
@@ -73,3 +73,4 @@ UI shows progress and changed files
 - The executor only runs fixed safe actions.
 - The demo completes in 10-20 seconds.
 - File changes are visible immediately.
+- Undo restores the previous operation.
